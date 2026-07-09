@@ -1,4 +1,10 @@
+<div align="center">
+
 # VagaAI
+
+**Descrições de vagas profissionais em segundos, geradas com IA.**
+
+[![Ver Demo](https://img.shields.io/badge/%E2%96%B6%EF%B8%8E%20%20Ver%20Demo-0e6b4a?style=for-the-badge&logoColor=white)](https://vagaai-demo.vercel.app)
 
 [![CI](https://github.com/leomoraessantdev/VagaAI/actions/workflows/ci.yml/badge.svg)](https://github.com/leomoraessantdev/VagaAI/actions/workflows/ci.yml)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
@@ -7,9 +13,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)
 ![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F55036)
 
-> **Descrições de vagas profissionais em segundos, geradas com IA.**
->
-> 🔗 **Demo ao vivo:** [vagaai-demo.vercel.app](https://vagaai-demo.vercel.app)
+</div>
 
 VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas completas e profissionais a partir de um formulário simples. Ideal para RH, recrutadores e fundadores que precisam publicar vagas no LinkedIn, Gupy ou Indeed rapidamente.
 
