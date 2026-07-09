@@ -14,42 +14,66 @@ export default function App() {
   const [lastForm, setLastForm] = useState<JobFormData | null>(null);
   const { entries, addEntry, clearHistory } = useHistory();
 
-  async function handleSubmit(data: JobFormData, seed?: string) {
-    setIsLoading(true);
-    setError('');
-    setLastForm(data);
-    try {
-      const result = await gerarDescricao({ ...data, seed });
-      setDescricao(result);
-      addEntry(data.cargo, result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido.');
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const handleSubmit = useCallback(
+    async (data: JobFormData, seed?: string) => {
+      setIsLoading(true);
+      setError('');
+      setLastForm(data);
+      try {
+        const result = await gerarDescricao({ ...data, seed });
+        setDescricao(result);
+        addEntry(data.cargo, result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro desconhecido.');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [addEntry],
+  );
 
   const handleRegenerate = useCallback(() => {
     if (lastForm) handleSubmit(lastForm, Date.now().toString());
-  }, [lastForm]);
+  }, [lastForm, handleSubmit]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+
+      <section className="max-w-6xl mx-auto w-full px-5 pt-12 pb-10 animate-fade-up">
+        <p className="font-mono text-xs text-accent uppercase tracking-[0.2em] mb-4">
+          Gerador de descrições de vagas
+        </p>
+        <h1 className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.05] max-w-3xl">
+          Vagas bem escritas contratam <span className="text-accent italic">melhor</span>.
+        </h1>
+        <p className="mt-5 text-ink-soft text-lg max-w-xl leading-relaxed">
+          Preencha os dados da posição e a IA escreve uma descrição completa, pronta para
+          publicar no LinkedIn, Gupy ou Indeed.
+        </p>
+      </section>
+
+      <main className="flex-1 max-w-6xl mx-auto w-full px-5 pb-16">
         {error && (
-          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div
+            role="alert"
+            className="mb-6 px-4 py-3 bg-danger-tint border border-danger/30 rounded-xl text-danger text-sm"
+          >
             {error}
           </div>
         )}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Dados da Vaga</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div
+            className="lg:col-span-5 bg-sheet rounded-2xl border border-line shadow-sheet p-6 sm:p-7 animate-fade-up"
+            style={{ animationDelay: '0.1s' }}
+          >
             <JobForm onSubmit={handleSubmit} isLoading={isLoading} />
             <History entries={entries} onSelect={setDescricao} onClear={clearHistory} />
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:min-h-[600px] flex flex-col">
-            <h2 className="text-lg font-sement text-gray-800 mb-4">Descrição Gerada</h2>
+          <div
+            className="lg:col-span-7 bg-sheet rounded-2xl border border-line shadow-lift lg:min-h-[640px] flex flex-col lg:sticky lg:top-6 animate-fade-up"
+            style={{ animationDelay: '0.2s' }}
+          >
             <ResultArea
               descricao={descricao}
               isLoading={isLoading}
@@ -58,6 +82,17 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      <footer className="border-t border-line">
+        <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="font-mono text-[11px] text-ink-faint">
+            VagaAI — projeto open-source
+          </span>
+          <span className="font-mono text-[11px] text-ink-faint">
+            React · TypeScript · Node · Groq
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

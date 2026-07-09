@@ -16,14 +16,14 @@ export function History({ entries, onSelect, onClear }: Props) {
   if (entries.length === 0) return null;
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+    <div className="mt-8">
+      <div className="flex items-baseline justify-between border-b border-line pb-1.5 mb-3">
+        <h3 className="font-mono text-[11px] text-ink-faint uppercase tracking-widest">
           Histórico recente
         </h3>
         <button
           onClick={onClear}
-          className="text-xs text-gray-400 hover:text-red-500 transition"
+          className="font-mono text-[11px] text-ink-faint hover:text-danger transition-colors"
         >
           Limpar
         </button>
@@ -33,17 +33,17 @@ export function History({ entries, onSelect, onClear }: Props) {
           <button
             key={entry.id}
             onClick={() => onSelect(entry.descricao)}
-            className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-[#1563D3] hover:bg-blue-50 transition group"
+            className="w-full text-left px-3.5 py-2.5 rounded-lg border border-line bg-sheet hover:border-accent hover:bg-accent-tint transition-colors group"
           >
-            <div className="flex items-center justify-between mb-0.5">
-              <span className="text-sm font-medium text-gray-700 group-hover:text-[#1563D3] truncate max-w-[60%]">
+            <div className="flex items-center justify-between mb-0.5 gap-2">
+              <span className="text-sm font-medium text-ink group-hover:text-accent-deep truncate">
                 {entry.cargo}
               </span>
-              <span className="text-xs text-gray-400 shrink-0">
+              <span className="font-mono text-[11px] text-ink-faint shrink-0">
                 {fmtDate(entry.timestamp)}
               </span>
             </div>
-            <p className="text-xs text-gray-400 truncate">
+            <p className="text-xs text-ink-faint truncate">
               {entry.descricao.slice(0, 80)}...
             </p>
           </button>

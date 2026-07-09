@@ -1,1 +1,84 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, sans-serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-paper: #f5f3ec;
+  --color-sheet: #fffdf7;
+  --color-ink: #1b1b22;
+  --color-ink-soft: #4c4c58;
+  --color-ink-faint: #90909b;
+  --color-line: #e2dfd2;
+  --color-line-strong: #cfcbba;
+  --color-accent: #0e6b4a;
+  --color-accent-deep: #0a523a;
+  --color-accent-tint: #e7f0e9;
+  --color-amber: #d9822b;
+  --color-danger: #b3402e;
+  --color-danger-tint: #f9e9e5;
+
+  --shadow-sheet: 0 1px 2px rgb(27 27 34 / 0.05), 0 12px 32px -12px rgb(27 27 34 / 0.14);
+  --shadow-lift: 0 2px 4px rgb(27 27 34 / 0.06), 0 20px 44px -16px rgb(27 27 34 / 0.2);
+
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grain texture over the whole page */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-sheet);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
