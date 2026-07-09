@@ -4,15 +4,23 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)
-![Anthropic](https://img.shields.io/badge/Claude-claude--sonnet--4--6-blueviolet)
+![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F55036)
 
 > **Descrições de vagas profissionais em segundos, geradas com IA.**
 
-VagaAI usa a API da Anthropic para gerar descrições de vagas completas e profissionais a partir de um formulário simples. Ideal para RH, recrutadores e fundadores que precisam publicar vagas no LinkedIn, Gupy ou Indeed rapidamente.
+VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas completas e profissionais a partir de um formulário simples. Ideal para RH, recrutadores e fundadores que precisam publicar vagas no LinkedIn, Gupy ou Indeed rapidamente.
+
+## Funcionalidades
+
+- Formulário guiado com nível, modalidade e tom da descrição
+- Resultado formatado (títulos, negrito e listas) pronto para copiar
+- Regenerar com variação — nova versão da mesma vaga em um clique
+- Histórico das últimas gerações salvo localmente (localStorage)
+- Rate limiting, validação de payload e CORS restrito no backend
 
 ## Screenshots
 
-_Em breve_
+![Interface do VagaAI](docs/vagaai.png)
 
 ## Tecnologias
 
@@ -20,7 +28,7 @@ _Em breve_
 |---|---|
 | Frontend | React 18, TypeScript, Tailwind v4, Vite |
 | Backend | Node.js 20, Express, TypeScript |
-| IA | Claude claude-sonnet-4-6 via Anthropic SDK |
+| IA | Llama 3.3 70B via Groq SDK |
 | Deploy | Vercel (frontend) + Render (backend) |
 | Testes | Vitest + RTL (frontend), Jest + Supertest (backend) |
 
@@ -29,14 +37,14 @@ _Em breve_
 ### Pré-requisitos
 
 - Node.js 20+
-- Chave de API da Anthropic ([console.anthropic.com](https://console.anthropic.com))
+- Chave de API da Groq ([console.groq.com](https://console.groq.com) — gratuita)
 
 ### Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Edite .env e adicione sua ANTHROPIC_API_KEY
+# Edite .env e adicione sua GROQ_API_KEY
 npm install
 npm run dev
 ```
@@ -68,7 +76,7 @@ Frontend disponível em `http://localhost:5173`
 2. **Root Directory:** `backend`
 3. **Build Command:** `npm install && npm run build`
 4. **Start Command:** `npm start`
-5. **Environment Variable:** `ANTHROPIC_API_KEY=sua_chave`
+5. **Environment Variable:** `GROQ_API_KEY=sua_chave`
 6. Opcional: `ALLOWED_ORIGINS=https://seu-frontend.vercel.app`
 
 ## Estrutura do Projeto
