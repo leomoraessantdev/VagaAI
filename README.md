@@ -1,5 +1,6 @@
 # VagaAI
 
+[![CI](https://github.com/leomoraessantdev/VagaAI/actions/workflows/ci.yml/badge.svg)](https://github.com/leomoraessantdev/VagaAI/actions/workflows/ci.yml)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
@@ -23,6 +24,8 @@ VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas comple
 ## Screenshots
 
 ![Interface do VagaAI](docs/vagaai.png)
+
+![Descrição gerada pelo VagaAI](docs/vagaai-resultado.png)
 
 ## Tecnologias
 
