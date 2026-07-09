@@ -9,6 +9,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
 
+// Atrás do proxy da Vercel/Render o IP real vem em X-Forwarded-For;
+// sem isso o express-rate-limit rejeita as requisições.
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -38,8 +42,12 @@ app.get('/health', (_req, res) => {
 import gerarVagaRouter from './routes/gerarVaga';
 app.use('/api', gerarVagaRouter);
 
-app.listen(PORT, () => {
-  console.log(`VagaAI backend rodando na porta ${PORT}`);
-});
+// Na Vercel o app roda como serverless function (ver api/index.ts);
+// só abre porta em execução local/Render.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`VagaAI backend rodando na porta ${PORT}`);
+  });
+}
 
 export default app;

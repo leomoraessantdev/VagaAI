@@ -7,6 +7,8 @@
 ![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F55036)
 
 > **Descrições de vagas profissionais em segundos, geradas com IA.**
+>
+> 🔗 **Demo ao vivo:** [vagaai-demo.vercel.app](https://vagaai-demo.vercel.app)
 
 VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas completas e profissionais a partir de um formulário simples. Ideal para RH, recrutadores e fundadores que precisam publicar vagas no LinkedIn, Gupy ou Indeed rapidamente.
 
@@ -29,7 +31,7 @@ VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas comple
 | Frontend | React 18, TypeScript, Tailwind v4, Vite |
 | Backend | Node.js 20, Express, TypeScript |
 | IA | Llama 3.3 70B via Groq SDK |
-| Deploy | Vercel (frontend) + Render (backend) |
+| Deploy | Vercel (frontend estático + backend serverless) |
 | Testes | Vitest + RTL (frontend), Jest + Supertest (backend) |
 
 ## Como Rodar Localmente
@@ -63,21 +65,36 @@ Frontend disponível em `http://localhost:5173`
 
 ## Deploy
 
+Os dois lados rodam na Vercel — o frontend como site estático (Vite) e o backend
+como serverless function (`backend/api/index.ts` exporta o app Express).
+
 ### Frontend → Vercel
 
-1. Importe o repositório no [vercel.com](https://vercel.com)
-2. **Root Directory:** `frontend`
-3. **Environment Variable:** `VITE_API_URL=https://sua-url.onrender.com`
-4. Deploy automático em cada push para `main`
+```bash
+cd frontend
+vercel link
+vercel env add VITE_API_URL production   # URL do backend
+vercel --prod
+```
 
-### Backend → Render
+### Backend → Vercel
+
+```bash
+cd backend
+vercel link
+vercel env add GROQ_API_KEY production
+vercel env add ALLOWED_ORIGINS production  # URL do frontend
+vercel --prod
+```
+
+### Alternativa: Backend → Render
+
+O backend também roda como servidor tradicional (o `app.listen` só é
+desativado quando `VERCEL` está definido no ambiente):
 
 1. Crie um **Web Service** no [render.com](https://render.com)
-2. **Root Directory:** `backend`
-3. **Build Command:** `npm install && npm run build`
-4. **Start Command:** `npm start`
-5. **Environment Variable:** `GROQ_API_KEY=sua_chave`
-6. Opcional: `ALLOWED_ORIGINS=https://seu-frontend.vercel.app`
+2. **Root Directory:** `backend` · **Build:** `npm install && npm run build` · **Start:** `npm start`
+3. **Environment Variables:** `GROQ_API_KEY` e `ALLOWED_ORIGINS`
 
 ## Estrutura do Projeto
 
