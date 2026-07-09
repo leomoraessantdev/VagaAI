@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { buildPrompt, SYSTEM_PROMPT } from '../lib/buildPrompt';
 import { JobFormData, NivelVaga, Modalidade, TomDescricao } from '../types';
 
 const router = Router();
 
-function getClient(): Anthropic {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getClient(): Groq {
+  return new Groq({ apiKey: process.env.GROQ_API_KEY });
 }
 
 const NIVEIS: NivelVaga[] = ['estagio', 'junior', 'pleno', 'senior'];
@@ -29,6 +29,12 @@ function validateBody(body: unknown): body is JobFormData {
 }
 
 router.post('/gerar-vaga', async (req: Request, res: Response) => {
+  if (!process.env.GROQ_API_KEY) {
+    console.error('GROQ_API_KEY não configurada.');
+    res.status(500).json({ erro: 'Servidor sem configuração de IA. Contate o administrador.' });
+    return;
+  }
+
   if (!validateBody(req.body)) {
     res.status(400).json({ erro: 'Campos obrigatórios ausentes ou inválidos.' });
     return;
@@ -38,22 +44,24 @@ router.post('/gerar-vaga', async (req: Request, res: Response) => {
 
   try {
     const client = getClient();
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const completion = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: buildPrompt(formData, seed) }],
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildPrompt(formData, seed) },
+      ],
     });
 
-    const textBlock = message.content.find((c) => c.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
+    const text = completion.choices[0]?.message?.content;
+    if (!text) {
       res.status(500).json({ erro: 'Resposta inesperada da IA.' });
       return;
     }
 
-    res.json({ descricao: textBlock.text });
+    res.json({ descricao: text });
   } catch (error) {
-    console.error('Anthropic API error:', error);
+    console.error('Groq API error:', error);
     res.status(500).json({ erro: 'Falha ao gerar descrição. Tente novamente.' });
   }
 });

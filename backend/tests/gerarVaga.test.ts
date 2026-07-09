@@ -1,18 +1,20 @@
 import request from 'supertest';
 import express from 'express';
 
-jest.mock('@anthropic-ai/sdk', () => {
+jest.mock('groq-sdk', () => {
   const mockCreate = jest.fn().mockResolvedValue({
-    content: [{ type: 'text', text: 'Descrição gerada pela IA para teste.' }],
+    choices: [{ message: { content: 'Descrição gerada pela IA para teste.' } }],
   });
-  const MockAnthropic = jest.fn().mockImplementation(() => ({
-    messages: { create: mockCreate },
+  const MockGroq = jest.fn().mockImplementation(() => ({
+    chat: { completions: { create: mockCreate } },
   }));
   return {
     __esModule: true,
-    default: MockAnthropic,
+    default: MockGroq,
   };
 });
+
+process.env.GROQ_API_KEY = 'test-key';
 
 import gerarVagaRouter from '../src/routes/gerarVaga';
 
