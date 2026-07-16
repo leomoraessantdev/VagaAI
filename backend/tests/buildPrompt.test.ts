@@ -50,11 +50,19 @@ describe('buildPrompt', () => {
     expect(buildPrompt({ ...base, tom: 'descontraido' })).toContain('descontraído');
   });
 
-  it('adds regeneration instruction when seed provided', () => {
-    expect(buildPrompt(base, 'abc')).toContain('versão DIFERENTE');
+  it('adds regeneration instruction with previous text when anterior provided', () => {
+    const out = buildPrompt(base, 'Texto da versão anterior da vaga.');
+    expect(out).toContain('versão DIFERENTE');
+    expect(out).toContain('Texto da versão anterior da vaga.');
   });
 
-  it('no regeneration instruction without seed', () => {
+  it('truncates anterior to 1500 chars in the prompt', () => {
+    const out = buildPrompt(base, 'x'.repeat(5000));
+    expect(out).toContain('x'.repeat(1500));
+    expect(out).not.toContain('x'.repeat(1501));
+  });
+
+  it('no regeneration instruction without anterior', () => {
     expect(buildPrompt(base)).not.toContain('versão DIFERENTE');
   });
 });

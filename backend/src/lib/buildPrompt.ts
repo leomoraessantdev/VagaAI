@@ -26,7 +26,11 @@ export const SYSTEM_PROMPT =
   'em plataformas profissionais como LinkedIn, Gupy e Indeed. ' +
   'Use formatação com títulos em negrito e listas quando apropriado.';
 
-export function buildPrompt(data: JobFormData, seed?: string): string {
+// Quanto da descrição anterior entra no prompt de regeneração —
+// suficiente para o modelo evitar repetir estrutura sem estourar contexto.
+const MAX_ANTERIOR = 1500;
+
+export function buildPrompt(data: JobFormData, anterior?: string): string {
   const nivel = nivelMap[data.nivel];
   const modalidade = modalidadeMap[data.modalidade];
   const tom = tomMap[data.tom];
@@ -49,8 +53,11 @@ export function buildPrompt(data: JobFormData, seed?: string): string {
 
   prompt += `\n\nUtilize ${tom}. Seja específico e evite linguagem genérica.`;
 
-  if (seed) {
-    prompt += `\n\nIMPORTANTE: Crie uma versão DIFERENTE da anterior, variando estrutura e abertura.`;
+  if (anterior) {
+    prompt +=
+      `\n\nIMPORTANTE: Crie uma versão DIFERENTE da descrição abaixo — varie a estrutura, ` +
+      `a abertura e o vocabulário, mantendo as informações da vaga:\n---\n` +
+      `${anterior.slice(0, MAX_ANTERIOR)}\n---`;
   }
 
   return prompt;

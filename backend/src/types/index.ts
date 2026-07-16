@@ -12,5 +12,8 @@ export interface JobFormData {
   diferenciais: string;
   beneficios: string;
   tom: TomDescricao;
-  seed?: string;
 }
+
+// Corpo aceito pelo POST /api/gerar-vaga; `anterior` é a descrição
+// gerada antes, usada para pedir uma variação de verdade na regeneração.
+export type GerarVagaBody = JobFormData & { anterior?: string };
