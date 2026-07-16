@@ -14,12 +14,10 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').
 app.set('trust proxy', 1);
 
 app.use(cors({
+  // Origem não permitida: responde sem headers CORS (navegador bloqueia)
+  // em vez de derrubar a requisição com erro 500.
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, !origin || allowedOrigins.includes(origin));
   },
   methods: ['GET', 'POST'],
 }));
