@@ -26,7 +26,7 @@ jobs:
       - run: npm run build
 
   backend:
-    name: Backend (test, build)
+    name: Backend (lint, test, build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,5 +39,6 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
+      - run: npm run lint
       - run: npm test
       - run: npm run build
