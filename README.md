@@ -7,8 +7,8 @@
 [![Ver Demo](https://img.shields.io/badge/%E2%96%B6%EF%B8%8E%20%20Ver%20Demo-0e6b4a?style=for-the-badge&logoColor=white)](https://vagaai-demo.vercel.app)
 
 [![CI](https://github.com/leomoraessantdev/VagaAI/actions/workflows/ci.yml/badge.svg)](https://github.com/leomoraessantdev/VagaAI/actions/workflows/ci.yml)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)
 ![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F55036)
@@ -20,9 +20,11 @@ VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas comple
 ## Funcionalidades
 
 - Formulário guiado com nível, modalidade e tom da descrição
+- Streaming em tempo real — o texto aparece enquanto a IA escreve (SSE)
 - Resultado formatado (títulos, negrito e listas) pronto para copiar
-- Regenerar com variação — nova versão da mesma vaga em um clique
-- Histórico das últimas gerações salvo localmente (localStorage)
+- Copiar inteligente: rich text para editores e texto puro sem markdown para LinkedIn/Gupy
+- Regenerar com variação real — o modelo recebe a versão anterior e evita repeti-la
+- Histórico das últimas gerações salvo localmente (localStorage), com regeneração a partir dele
 - Rate limiting, validação de payload e CORS restrito no backend
 
 ## Screenshots
@@ -35,7 +37,7 @@ VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas comple
 
 | Camada | Stack |
 |---|---|
-| Frontend | React 18, TypeScript, Tailwind v4, Vite |
+| Frontend | React 19, TypeScript, Tailwind v4, Vite |
 | Backend | Node.js 20, Express, TypeScript |
 | IA | Llama 3.3 70B via Groq SDK |
 | Deploy | Vercel (frontend estático + backend serverless) |
@@ -111,7 +113,7 @@ vagaai/
 │   └── src/
 │       ├── components/    # Header, JobForm, ResultArea, History
 │       ├── hooks/         # useHistory (localStorage)
-│       ├── lib/           # api.ts (axios client)
+│       ├── lib/           # api.ts (fetch + SSE), markdown.tsx
 │       └── types/         # Tipos TypeScript compartilhados
 ├── backend/               # Node.js + Express + TypeScript
 │   └── src/
