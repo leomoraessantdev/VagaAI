@@ -5,24 +5,30 @@ import { ResultArea } from './components/ResultArea';
 import { History } from './components/History';
 import { useHistory } from './hooks/useHistory';
 import { gerarDescricao } from './lib/api';
-import { JobFormData } from './types';
+import { HistoryEntry, JobFormData } from './types';
 
 export default function App() {
   const [descricao, setDescricao] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [aviso, setAviso] = useState('');
   const [lastForm, setLastForm] = useState<JobFormData | null>(null);
   const { entries, addEntry, clearHistory } = useHistory();
 
   const handleSubmit = useCallback(
-    async (data: JobFormData, seed?: string) => {
+    async (data: JobFormData, anterior?: string) => {
       setIsLoading(true);
       setError('');
+      setAviso('');
       setLastForm(data);
+      setDescricao('');
       try {
-        const result = await gerarDescricao({ ...data, seed });
-        setDescricao(result);
-        addEntry(data.cargo, result);
+        const { texto, truncada } = await gerarDescricao({ ...data, anterior }, setDescricao);
+        setDescricao(texto);
+        if (truncada) {
+          setAviso('A descrição atingiu o limite de tamanho e pode ter sido cortada no final.');
+        }
+        addEntry(data, texto);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro desconhecido.');
       } finally {
@@ -33,8 +39,15 @@ export default function App() {
   );
 
   const handleRegenerate = useCallback(() => {
-    if (lastForm) handleSubmit(lastForm, Date.now().toString());
-  }, [lastForm, handleSubmit]);
+    if (lastForm) handleSubmit(lastForm, descricao || undefined);
+  }, [lastForm, descricao, handleSubmit]);
+
+  const handleSelectHistory = useCallback((entry: HistoryEntry) => {
+    setDescricao(entry.descricao);
+    setLastForm(entry.form ?? null);
+    setError('');
+    setAviso('');
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -68,7 +81,7 @@ export default function App() {
             style={{ animationDelay: '0.1s' }}
           >
             <JobForm onSubmit={handleSubmit} isLoading={isLoading} />
-            <History entries={entries} onSelect={setDescricao} onClear={clearHistory} />
+            <History entries={entries} onSelect={handleSelectHistory} onClear={clearHistory} />
           </div>
           <div
             className="lg:col-span-7 bg-sheet rounded-2xl border border-line shadow-lift lg:min-h-[640px] flex flex-col lg:sticky lg:top-6 animate-fade-up"
@@ -78,6 +91,8 @@ export default function App() {
               descricao={descricao}
               isLoading={isLoading}
               onRegenerate={handleRegenerate}
+              canRegenerate={lastForm !== null}
+              aviso={aviso || undefined}
             />
           </div>
         </div>

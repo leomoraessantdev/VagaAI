@@ -14,13 +14,12 @@ export interface JobFormData {
   tom: TomDescricao;
 }
 
-export interface GerarVagaResponse {
-  descricao: string;
-}
-
 export interface HistoryEntry {
   id: string;
   cargo: string;
   descricao: string;
   timestamp: number;
+  // Ausente em entradas antigas salvas antes do form completo ser guardado;
+  // sem ele não dá para regenerar a partir do histórico.
+  form?: JobFormData;
 }

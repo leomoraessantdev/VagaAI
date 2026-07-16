@@ -2,7 +2,7 @@ import { HistoryEntry } from '../types';
 
 interface Props {
   entries: HistoryEntry[];
-  onSelect: (descricao: string) => void;
+  onSelect: (entry: HistoryEntry) => void;
   onClear: () => void;
 }
 
@@ -32,7 +32,7 @@ export function History({ entries, onSelect, onClear }: Props) {
         {entries.map((entry) => (
           <button
             key={entry.id}
-            onClick={() => onSelect(entry.descricao)}
+            onClick={() => onSelect(entry)}
             className="w-full text-left px-3.5 py-2.5 rounded-lg border border-line bg-sheet hover:border-accent hover:bg-accent-tint transition-colors group"
           >
             <div className="flex items-center justify-between mb-0.5 gap-2">

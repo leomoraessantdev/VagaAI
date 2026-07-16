@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HistoryEntry } from '../types';
+import { HistoryEntry, JobFormData } from '../types';
 
 const KEY = 'vagaai_history';
 const MAX = 5;
@@ -20,12 +20,13 @@ export function useHistory() {
     localStorage.setItem(KEY, JSON.stringify(entries));
   }, [entries]);
 
-  function addEntry(cargo: string, descricao: string) {
+  function addEntry(form: JobFormData, descricao: string) {
     const entry: HistoryEntry = {
       id: Date.now().toString(),
-      cargo,
+      cargo: form.cargo,
       descricao,
       timestamp: Date.now(),
+      form,
     };
     setEntries((prev) => [entry, ...prev].slice(0, MAX));
   }

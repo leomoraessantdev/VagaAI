@@ -1,24 +1,50 @@
 import { useState } from 'react';
-import { renderDescription } from '../lib/markdown';
+import { renderDescription, descriptionToHtml, descriptionToPlainText } from '../lib/markdown';
 
 interface Props {
   descricao: string;
   isLoading: boolean;
   onRegenerate: () => void;
+  canRegenerate: boolean;
+  aviso?: string;
 }
 
 const SKELETON_WIDTHS = ['w-2/5', 'w-full', 'w-11/12', 'w-4/5', 'w-1/3', 'w-full', 'w-3/4'];
 
-export function ResultArea({ descricao, isLoading, onRegenerate }: Props) {
-  const [copied, setCopied] = useState(false);
+type CopyState = 'idle' | 'ok' | 'erro';
+
+export function ResultArea({ descricao, isLoading, onRegenerate, canRegenerate, aviso }: Props) {
+  const [copied, setCopied] = useState<CopyState>('idle');
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(descricao);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const plain = descriptionToPlainText(descricao);
+    const html = descriptionToHtml(descricao);
+    try {
+      // text/html preserva negrito/listas ao colar em editores ricos;
+      // text/plain (sem marcadores **) cobre LinkedIn, Gupy e afins.
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([plain], { type: 'text/plain' }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      setCopied('ok');
+    } catch {
+      try {
+        await navigator.clipboard.writeText(plain);
+        setCopied('ok');
+      } catch {
+        setCopied('erro');
+      }
+    }
+    setTimeout(() => setCopied('idle'), 2000);
   }
 
-  if (isLoading) {
+  if (isLoading && !descricao) {
     return (
       <div role="status" aria-label="Carregando" className="flex flex-col flex-1 gap-3.5 p-8">
         {SKELETON_WIDTHS.map((w, i) => (
@@ -65,14 +91,23 @@ export function ResultArea({ descricao, isLoading, onRegenerate }: Props) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      <p className="sr-only" role="status">
+        {isLoading ? 'Gerando descrição com IA' : 'Descrição gerada'}
+      </p>
       <div className="flex items-center justify-between gap-2 px-5 py-3 border-b border-line">
         <span className="font-mono text-[11px] text-ink-faint uppercase tracking-widest">
-          {words} palavras
+          {isLoading ? 'Gerando…' : `${words} palavras`}
         </span>
         <div className="flex gap-2">
           <button
             onClick={onRegenerate}
-            className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-soft hover:border-ink hover:text-ink transition-colors"
+            disabled={!canRegenerate || isLoading}
+            title={
+              canRegenerate
+                ? undefined
+                : 'Disponível após gerar uma descrição pelo formulário nesta sessão'
+            }
+            className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-soft hover:border-ink hover:text-ink transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-line-strong disabled:hover:text-ink-soft"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -86,14 +121,22 @@ export function ResultArea({ descricao, isLoading, onRegenerate }: Props) {
           </button>
           <button
             onClick={handleCopy}
-            className="text-sm flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent text-sheet font-medium hover:bg-accent-deep transition-colors"
+            disabled={isLoading}
+            className="text-sm flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent text-sheet font-medium hover:bg-accent-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {copied ? (
+            {copied === 'ok' ? (
               <>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Copiado!
+              </>
+            ) : copied === 'erro' ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Falhou
               </>
             ) : (
               <>
@@ -111,8 +154,18 @@ export function ResultArea({ descricao, isLoading, onRegenerate }: Props) {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto min-h-0 px-6 sm:px-8 py-6">
-        <div className="space-y-3 text-[15px] text-ink-soft">{renderDescription(descricao)}</div>
+      {aviso && (
+        <div className="px-5 py-2.5 border-b border-line bg-accent-tint text-ink-soft text-xs">
+          {aviso}
+        </div>
+      )}
+      <div className="flex-1 overflow-y-auto min-h-0 px-6 sm:px-8 py-6" aria-busy={isLoading}>
+        <div className="space-y-3 text-[15px] text-ink-soft">
+          {renderDescription(descricao)}
+          {isLoading && (
+            <span className="inline-block w-2 h-4 bg-accent animate-pulse align-text-bottom" aria-hidden />
+          )}
+        </div>
       </div>
     </div>
   );
