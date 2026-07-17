@@ -9,6 +9,35 @@
       content="VagaAI — gere descrições de vagas profissionais em segundos com IA. Pronto para LinkedIn, Gupy e Indeed."
     />
     <title>VagaAI — Descrições de vagas com IA</title>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="VagaAI" />
+    <meta property="og:title" content="VagaAI — Descrições de vagas com IA" />
+    <meta
+      property="og:description"
+      content="Gere descrições de vagas profissionais em segundos com IA. Pronto para LinkedIn, Gupy e Indeed."
+    />
+    <meta property="og:url" content="https://vagaai-demo.vercel.app/" />
+    <meta property="og:image" content="https://vagaai-demo.vercel.app/vagaai.png" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="VagaAI — Descrições de vagas com IA" />
+    <meta
+      name="twitter:description"
+      content="Gere descrições de vagas profissionais em segundos com IA. Pronto para LinkedIn, Gupy e Indeed."
+    />
+    <meta name="twitter:image" content="https://vagaai-demo.vercel.app/vagaai.png" />
+
+    <script>
+      // Aplica o tema antes do primeiro paint para evitar flash de tema errado.
+      (function () {
+        try {
+          var salvo = localStorage.getItem('vagaai_theme');
+          var escuro = salvo ? salvo === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+          if (escuro) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

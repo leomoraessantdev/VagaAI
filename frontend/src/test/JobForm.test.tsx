@@ -29,6 +29,46 @@ describe('JobForm', () => {
     expect(btn).toBeDisabled();
   });
 
+  it('fills the form when "Preencher com exemplo" is clicked', async () => {
+    const user = userEvent.setup();
+    render(<JobForm onSubmit={noop} isLoading={false} />);
+
+    await user.click(screen.getByRole('button', { name: /preencher com exemplo/i }));
+
+    expect(screen.getByLabelText(/cargo/i)).toHaveValue('Desenvolvedor(a) Front-end Pleno');
+    expect(screen.getByLabelText(/área/i)).toHaveValue('Tecnologia');
+    expect(screen.getByLabelText(/responsabilidades/i)).not.toHaveValue('');
+    expect(screen.getByLabelText(/requisitos técnicos/i)).not.toHaveValue('');
+  });
+
+  it('starts with initialData when provided', () => {
+    render(
+      <JobForm
+        onSubmit={noop}
+        isLoading={false}
+        initialData={{
+          cargo: 'Analista de Dados',
+          area: 'Dados',
+          nivel: 'senior',
+          modalidade: 'hibrido',
+          responsabilidades: 'Construir dashboards',
+          requisitos: 'SQL, Python',
+          diferenciais: '',
+          beneficios: '',
+          tom: 'formal',
+        }}
+      />,
+    );
+    expect(screen.getByLabelText(/cargo/i)).toHaveValue('Analista de Dados');
+    expect(screen.getByLabelText(/nível/i)).toHaveValue('senior');
+  });
+
+  it('limits cargo input to the backend max length', () => {
+    render(<JobForm onSubmit={noop} isLoading={false} />);
+    expect(screen.getByLabelText(/cargo/i)).toHaveAttribute('maxlength', '120');
+    expect(screen.getByLabelText(/responsabilidades/i)).toHaveAttribute('maxlength', '3000');
+  });
+
   it('calls onSubmit with form data', async () => {
     const user = userEvent.setup();
     render(<JobForm onSubmit={noop} isLoading={false} />);

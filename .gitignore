@@ -5,3 +5,7 @@ dist/
 *.local
 docs/superpowers/
 .vercel/
+
+# Playwright
+test-results/
+playwright-report/

@@ -25,6 +25,9 @@ VagaAI usa a API da Groq (Llama 3.3 70B) para gerar descrições de vagas comple
 - Copiar inteligente: rich text para editores e texto puro sem markdown para LinkedIn/Gupy
 - Regenerar com variação real — o modelo recebe a versão anterior e evita repeti-la
 - Histórico das últimas gerações salvo localmente (localStorage), com regeneração a partir dele
+- Botão "Preencher com exemplo" para testar a demo em um clique
+- Cancelamento da geração em andamento (o texto parcial é mantido)
+- Tema claro/escuro com preferência salva e detecção do tema do sistema
 - Rate limiting, validação de payload e CORS restrito no backend
 
 ## Screenshots
@@ -104,6 +107,14 @@ desativado quando `VERCEL` está definido no ambiente):
 1. Crie um **Web Service** no [render.com](https://render.com)
 2. **Root Directory:** `backend` · **Build:** `npm install && npm run build` · **Start:** `npm start`
 3. **Environment Variables:** `GROQ_API_KEY` e `ALLOWED_ORIGINS`
+
+## Limitações Conhecidas
+
+- **Rate limiting em serverless é melhor-esforço.** O `express-rate-limit` guarda os
+  contadores na memória do processo; na Vercel, cada instância serverless (e cada cold
+  start) começa zerada. Na prática o limite funciona como fricção contra abuso casual,
+  não como proteção rígida. Para garantia real seria necessário um armazenamento
+  compartilhado entre instâncias (ex.: Upstash Redis) — fora do escopo desta demo.
 
 ## Estrutura do Projeto
 

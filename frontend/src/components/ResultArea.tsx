@@ -5,6 +5,7 @@ interface Props {
   descricao: string;
   isLoading: boolean;
   onRegenerate: () => void;
+  onCancel: () => void;
   canRegenerate: boolean;
   aviso?: string;
 }
@@ -13,7 +14,14 @@ const SKELETON_WIDTHS = ['w-2/5', 'w-full', 'w-11/12', 'w-4/5', 'w-1/3', 'w-full
 
 type CopyState = 'idle' | 'ok' | 'erro';
 
-export function ResultArea({ descricao, isLoading, onRegenerate, canRegenerate, aviso }: Props) {
+export function ResultArea({
+  descricao,
+  isLoading,
+  onRegenerate,
+  onCancel,
+  canRegenerate,
+  aviso,
+}: Props) {
   const [copied, setCopied] = useState<CopyState>('idle');
 
   async function handleCopy() {
@@ -53,9 +61,18 @@ export function ResultArea({ descricao, isLoading, onRegenerate, canRegenerate, 
             className={`h-3.5 rounded ${w} animate-shimmer bg-[linear-gradient(90deg,var(--color-line)_25%,var(--color-paper)_50%,var(--color-line)_75%)] bg-[length:200%_100%]`}
           />
         ))}
-        <p className="mt-4 font-mono text-xs text-ink-faint">
-          Gerando descrição com IA<span className="animate-pulse">…</span>
-        </p>
+        <div className="mt-4 flex items-center gap-4">
+          <p className="font-mono text-xs text-ink-faint">
+            Gerando descrição com IA<span className="animate-pulse">…</span>
+          </p>
+          <button
+            onClick={onCancel}
+            className="text-sm flex items-center gap-1.5 px-3 py-1 rounded-lg border border-line-strong text-ink-soft hover:border-danger hover:text-danger transition-colors"
+          >
+            <span className="w-2 h-2 bg-current rounded-[2px]" aria-hidden />
+            Parar
+          </button>
+        </div>
       </div>
     );
   }
@@ -99,26 +116,36 @@ export function ResultArea({ descricao, isLoading, onRegenerate, canRegenerate, 
           {isLoading ? 'Gerando…' : `${words} palavras`}
         </span>
         <div className="flex gap-2">
-          <button
-            onClick={onRegenerate}
-            disabled={!canRegenerate || isLoading}
-            title={
-              canRegenerate
-                ? undefined
-                : 'Disponível após gerar uma descrição pelo formulário nesta sessão'
-            }
-            className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-soft hover:border-ink hover:text-ink transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-line-strong disabled:hover:text-ink-soft"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Regenerar
-          </button>
+          {isLoading ? (
+            <button
+              onClick={onCancel}
+              className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-soft hover:border-danger hover:text-danger transition-colors"
+            >
+              <span className="w-2 h-2 bg-current rounded-[2px]" aria-hidden />
+              Parar
+            </button>
+          ) : (
+            <button
+              onClick={onRegenerate}
+              disabled={!canRegenerate}
+              title={
+                canRegenerate
+                  ? undefined
+                  : 'Disponível após gerar uma descrição pelo formulário nesta sessão'
+              }
+              className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-soft hover:border-ink hover:text-ink transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-line-strong disabled:hover:text-ink-soft"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Regenerar
+            </button>
+          )}
           <button
             onClick={handleCopy}
             disabled={isLoading}

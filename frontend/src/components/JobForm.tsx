@@ -4,7 +4,49 @@ import { JobFormData, NivelVaga, Modalidade, TomDescricao } from '../types';
 interface Props {
   onSubmit: (data: JobFormData) => void;
   isLoading: boolean;
+  initialData?: JobFormData;
 }
+
+// Espelho dos limites validados pelo backend (backend/src/routes/gerarVaga.ts).
+const MAX_CHARS = {
+  cargo: 120,
+  area: 120,
+  responsabilidades: 3000,
+  requisitos: 3000,
+  diferenciais: 2000,
+  beneficios: 2000,
+} as const;
+
+const FORM_VAZIO: JobFormData = {
+  cargo: '',
+  area: '',
+  nivel: 'pleno',
+  modalidade: 'remoto',
+  responsabilidades: '',
+  requisitos: '',
+  diferenciais: '',
+  beneficios: '',
+  tom: 'moderno',
+};
+
+const EXEMPLO: JobFormData = {
+  cargo: 'Desenvolvedor(a) Front-end Pleno',
+  area: 'Tecnologia',
+  nivel: 'pleno',
+  modalidade: 'remoto',
+  responsabilidades:
+    'Desenvolver e manter interfaces web em React e TypeScript; ' +
+    'implementar protótipos do Figma em colaboração com o time de design; ' +
+    'escrever testes automatizados; participar de code reviews e das decisões de arquitetura do front-end.',
+  requisitos:
+    'Experiência sólida com React, TypeScript e consumo de APIs REST; ' +
+    'domínio de HTML, CSS e layout responsivo; familiaridade com Git e integração contínua.',
+  diferenciais: 'Next.js, Tailwind CSS, testes com Vitest, experiência com acessibilidade (WCAG).',
+  beneficios:
+    'Vale refeição e alimentação, plano de saúde e odontológico, auxílio home office, ' +
+    'horário flexível, verba anual para cursos e eventos.',
+  tom: 'moderno',
+};
 
 const inputCls =
   'w-full rounded-lg border border-line-strong bg-sheet px-3 py-2 text-sm text-ink ' +
@@ -12,8 +54,8 @@ const inputCls =
   'focus:ring-accent/20 transition-colors';
 const selectCls =
   inputCls +
-  " appearance-none pr-8 bg-no-repeat bg-[right_0.6rem_center] bg-[length:14px] " +
-  "bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke=%22%234c4c58%22%20stroke-width=%222%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20d=%22M19%209l-7%207-7-7%22/%3E%3C/svg%3E')]";
+  ' appearance-none pr-8 bg-no-repeat bg-[right_0.6rem_center] bg-[length:14px] ' +
+  'bg-[image:var(--select-arrow)]';
 const labelCls = 'block text-sm font-medium text-ink-soft mb-1';
 
 function Section({ n, title, children }: { n: string; title: string; children: ReactNode }) {
@@ -30,18 +72,20 @@ function Section({ n, title, children }: { n: string; title: string; children: R
   );
 }
 
-export function JobForm({ onSubmit, isLoading }: Props) {
-  const [form, setForm] = useState<JobFormData>({
-    cargo: '',
-    area: '',
-    nivel: 'pleno',
-    modalidade: 'remoto',
-    responsabilidades: '',
-    requisitos: '',
-    diferenciais: '',
-    beneficios: '',
-    tom: 'moderno',
-  });
+function Contador({ atual, max }: { atual: number; max: number }) {
+  const perto = atual >= max * 0.9;
+  return (
+    <span
+      className={`font-mono text-[11px] tabular-nums ${perto ? 'text-amber' : 'text-ink-faint'}`}
+      aria-hidden
+    >
+      {atual}/{max}
+    </span>
+  );
+}
+
+export function JobForm({ onSubmit, isLoading, initialData }: Props) {
+  const [form, setForm] = useState<JobFormData>(initialData ?? FORM_VAZIO);
 
   function set<K extends keyof JobFormData>(k: K, v: JobFormData[K]) {
     setForm((p) => ({ ...p, [k]: v }));
@@ -54,6 +98,16 @@ export function JobForm({ onSubmit, isLoading }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-7">
+      <div className="flex justify-end -mb-3">
+        <button
+          type="button"
+          onClick={() => setForm(EXEMPLO)}
+          className="font-mono text-[11px] text-accent hover:text-accent-deep underline underline-offset-4 decoration-line-strong hover:decoration-accent transition-colors"
+        >
+          Preencher com exemplo
+        </button>
+      </div>
+
       <Section n="01" title="A vaga">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -62,6 +116,7 @@ export function JobForm({ onSubmit, isLoading }: Props) {
               id="cargo"
               type="text"
               required
+              maxLength={MAX_CHARS.cargo}
               placeholder="Ex: Desenvolvedor Frontend"
               value={form.cargo}
               onChange={(e) => set('cargo', e.target.value)}
@@ -74,6 +129,7 @@ export function JobForm({ onSubmit, isLoading }: Props) {
               id="area"
               type="text"
               required
+              maxLength={MAX_CHARS.area}
               placeholder="Ex: Tecnologia, Marketing"
               value={form.area}
               onChange={(e) => set('area', e.target.value)}
@@ -128,13 +184,17 @@ export function JobForm({ onSubmit, isLoading }: Props) {
 
       <Section n="02" title="O dia a dia">
         <div>
-          <label htmlFor="responsabilidades" className={labelCls}>
-            Principais Responsabilidades *
-          </label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="responsabilidades" className={labelCls}>
+              Principais Responsabilidades *
+            </label>
+            <Contador atual={form.responsabilidades.length} max={MAX_CHARS.responsabilidades} />
+          </div>
           <textarea
             id="responsabilidades"
             required
             rows={4}
+            maxLength={MAX_CHARS.responsabilidades}
             placeholder="Descreva as principais atividades do cargo..."
             value={form.responsabilidades}
             onChange={(e) => set('responsabilidades', e.target.value)}
@@ -143,11 +203,15 @@ export function JobForm({ onSubmit, isLoading }: Props) {
         </div>
 
         <div>
-          <label htmlFor="requisitos" className={labelCls}>Requisitos Técnicos *</label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="requisitos" className={labelCls}>Requisitos Técnicos *</label>
+            <Contador atual={form.requisitos.length} max={MAX_CHARS.requisitos} />
+          </div>
           <textarea
             id="requisitos"
             required
             rows={3}
+            maxLength={MAX_CHARS.requisitos}
             placeholder="Liste as habilidades e experiências necessárias..."
             value={form.requisitos}
             onChange={(e) => set('requisitos', e.target.value)}
@@ -158,10 +222,14 @@ export function JobForm({ onSubmit, isLoading }: Props) {
 
       <Section n="03" title="Extras">
         <div>
-          <label htmlFor="diferenciais" className={labelCls}>Diferenciais Desejados</label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="diferenciais" className={labelCls}>Diferenciais Desejados</label>
+            <Contador atual={form.diferenciais.length} max={MAX_CHARS.diferenciais} />
+          </div>
           <textarea
             id="diferenciais"
             rows={2}
+            maxLength={MAX_CHARS.diferenciais}
             placeholder="Conhecimentos que serão um diferencial..."
             value={form.diferenciais}
             onChange={(e) => set('diferenciais', e.target.value)}
@@ -170,10 +238,14 @@ export function JobForm({ onSubmit, isLoading }: Props) {
         </div>
 
         <div>
-          <label htmlFor="beneficios" className={labelCls}>Benefícios Oferecidos</label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="beneficios" className={labelCls}>Benefícios Oferecidos</label>
+            <Contador atual={form.beneficios.length} max={MAX_CHARS.beneficios} />
+          </div>
           <textarea
             id="beneficios"
             rows={2}
+            maxLength={MAX_CHARS.beneficios}
             placeholder="Vale refeição, plano de saúde, home office..."
             value={form.beneficios}
             onChange={(e) => set('beneficios', e.target.value)}

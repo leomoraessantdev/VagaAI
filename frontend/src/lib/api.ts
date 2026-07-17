@@ -16,6 +16,14 @@ export interface GeracaoResultado {
   truncada: boolean;
 }
 
+/** Lançado quando o usuário interrompe a geração — não é um erro de verdade. */
+export class GeracaoCancelada extends Error {
+  constructor() {
+    super('Geração interrompida.');
+    this.name = 'GeracaoCancelada';
+  }
+}
+
 function parseEvento(bloco: string): EventoSSE | null {
   const linha = bloco.split('\n').find((l) => l.startsWith('data:'));
   if (!linha) return null;
@@ -62,19 +70,24 @@ async function lerStream(
 export async function gerarDescricao(
   data: JobFormData & { anterior?: string },
   onChunk?: (parcial: string) => void,
+  signal?: AbortSignal,
 ): Promise<GeracaoResultado> {
+  const timeout = AbortSignal.timeout(TIMEOUT_MS);
+  const sinal = signal ? AbortSignal.any([signal, timeout]) : timeout;
+
   let res: Response;
   try {
     res = await fetch(`${BASE}/api/gerar-vaga`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: sinal,
     });
   } catch (err) {
-    const timeout = err instanceof DOMException && err.name === 'TimeoutError';
+    if (signal?.aborted) throw new GeracaoCancelada();
+    const estourou = err instanceof DOMException && err.name === 'TimeoutError';
     throw new Error(
-      timeout
+      estourou
         ? 'Tempo esgotado ao gerar a descrição. Tente novamente.'
         : 'Erro ao conectar com o servidor.',
     );
@@ -102,5 +115,14 @@ export async function gerarDescricao(
   }
 
   if (!res.body) throw new Error('Resposta inesperada do servidor.');
-  return lerStream(res.body, onChunk);
+  try {
+    return await lerStream(res.body, onChunk);
+  } catch (err) {
+    // Abort no meio do stream chega como AbortError do reader.
+    if (signal?.aborted) throw new GeracaoCancelada();
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new Error('Tempo esgotado ao gerar a descrição. Tente novamente.');
+    }
+    throw err;
+  }
 }
