@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import Groq from 'groq-sdk';
+import Groq, { RateLimitError } from 'groq-sdk';
 import { buildPrompt, SYSTEM_PROMPT } from '../lib/buildPrompt';
 import { GerarVagaBody, NivelVaga, Modalidade, TomDescricao } from '../types';
 
@@ -110,11 +110,17 @@ router.post('/gerar-vaga', async (req: Request, res: Response) => {
     res.end();
   } catch (error) {
     console.error('Groq API error:', error);
+    // Groq free tier tem limite diário/por minuto compartilhado pela conta —
+    // ao bater o teto, avisa o usuário em vez de devolver erro genérico.
+    const limiteEstourado = error instanceof RateLimitError;
+    const mensagem = limiteEstourado
+      ? 'Estamos com alta demanda no momento. Tente novamente em alguns minutos.'
+      : 'Falha ao gerar descrição. Tente novamente.';
     if (res.headersSent) {
-      sseWrite(res, { erro: 'Falha ao gerar descrição. Tente novamente.' });
+      sseWrite(res, { erro: mensagem });
       res.end();
     } else {
-      res.status(500).json({ erro: 'Falha ao gerar descrição. Tente novamente.' });
+      res.status(limiteEstourado ? 503 : 500).json({ erro: mensagem });
     }
   }
 });

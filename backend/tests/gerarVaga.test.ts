@@ -4,18 +4,21 @@ import express from 'express';
 const mockCreate = jest.fn();
 
 jest.mock('groq-sdk', () => {
+  const actual = jest.requireActual('groq-sdk');
   const MockGroq = jest.fn().mockImplementation(() => ({
     chat: { completions: { create: mockCreate } },
   }));
   return {
     __esModule: true,
     default: MockGroq,
+    RateLimitError: actual.RateLimitError,
   };
 });
 
 process.env.GROQ_API_KEY = 'test-key';
 
 import gerarVagaRouter from '../src/routes/gerarVaga';
+import { RateLimitError } from 'groq-sdk';
 
 const app = express();
 app.use(express.json());
@@ -177,6 +180,15 @@ describe('POST /api/gerar-vaga', () => {
     const res = await request(app).post('/api/gerar-vaga').send(validBody);
     expect(res.status).toBe(500);
     expect(res.body).toHaveProperty('erro');
+  });
+
+  it('returns 503 with friendly message when Groq rate limit is hit', async () => {
+    mockCreate.mockRejectedValue(
+      new RateLimitError(429, { message: 'Rate limit exceeded' }, 'Rate limit exceeded', new Headers()),
+    );
+    const res = await request(app).post('/api/gerar-vaga').send(validBody);
+    expect(res.status).toBe(503);
+    expect(res.body.erro).toMatch(/alta demanda/i);
   });
 
   it('sends SSE erro event when stream fails mid-flight', async () => {
