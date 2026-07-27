@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
@@ -12,6 +13,10 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').
 // Atrás do proxy da Vercel/Render o IP real vem em X-Forwarded-For;
 // sem isso o express-rate-limit rejeita as requisições.
 app.set('trust proxy', 1);
+
+// Headers de segurança (oculta X-Powered-By, bloqueia MIME-sniffing e
+// framing); CSP desativado pois esta API não serve HTML.
+app.use(helmet({ contentSecurityPolicy: false }));
 
 app.use(cors({
   // Origem não permitida: responde sem headers CORS (navegador bloqueia)
