@@ -35,8 +35,13 @@ export function buildPrompt(data: JobFormData, anterior?: string): string {
   const modalidade = modalidadeMap[data.modalidade];
   const tom = tomMap[data.tom];
 
-  let prompt =
-    `Crie uma descrição de vaga de emprego profissional e atrativa em português brasileiro:\n\n` +
+  let prompt = `Crie uma descrição de vaga de emprego profissional e atrativa em português brasileiro:\n\n`;
+
+  if (data.empresa) {
+    prompt += `**Empresa:** ${data.empresa}\n`;
+  }
+
+  prompt +=
     `**Cargo:** ${data.cargo} — ${nivel}\n` +
     `**Área/Setor:** ${data.area}\n` +
     `**Modalidade:** ${modalidade}\n\n` +
@@ -52,6 +57,10 @@ export function buildPrompt(data: JobFormData, anterior?: string): string {
   }
 
   prompt += `\n\nUtilize ${tom}. Seja específico e evite linguagem genérica.`;
+
+  if (data.empresa) {
+    prompt += ` Mencione o nome da empresa (${data.empresa}) de forma natural na descrição.`;
+  }
 
   if (anterior) {
     prompt +=

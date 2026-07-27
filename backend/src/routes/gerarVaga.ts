@@ -14,6 +14,7 @@ const MODALIDADES: Modalidade[] = ['remoto', 'hibrido', 'presencial'];
 const TONS: TomDescricao[] = ['formal', 'moderno', 'descontraido'];
 
 const MAX_CHARS = {
+  empresa: 120,
   cargo: 120,
   area: 120,
   responsabilidades: 3000,
@@ -23,7 +24,7 @@ const MAX_CHARS = {
 } as const;
 
 const CAMPOS_OBRIGATORIOS = ['cargo', 'area', 'responsabilidades', 'requisitos'] as const;
-const CAMPOS_OPCIONAIS = ['diferenciais', 'beneficios'] as const;
+const CAMPOS_OPCIONAIS = ['empresa', 'diferenciais', 'beneficios'] as const;
 
 function validateBody(body: unknown): body is GerarVagaBody {
   if (!body || typeof body !== 'object') return false;

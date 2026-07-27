@@ -3,6 +3,7 @@ export type Modalidade = 'remoto' | 'hibrido' | 'presencial';
 export type TomDescricao = 'formal' | 'moderno' | 'descontraido';
 
 export interface JobFormData {
+  empresa?: string;
   cargo: string;
   area: string;
   nivel: NivelVaga;

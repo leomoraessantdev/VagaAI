@@ -9,6 +9,7 @@ interface Props {
 
 // Espelho dos limites validados pelo backend (backend/src/routes/gerarVaga.ts).
 const MAX_CHARS = {
+  empresa: 120,
   cargo: 120,
   area: 120,
   responsabilidades: 3000,
@@ -18,6 +19,7 @@ const MAX_CHARS = {
 } as const;
 
 const FORM_VAZIO: JobFormData = {
+  empresa: '',
   cargo: '',
   area: '',
   nivel: 'pleno',
@@ -30,6 +32,7 @@ const FORM_VAZIO: JobFormData = {
 };
 
 const EXEMPLO: JobFormData = {
+  empresa: 'TechNova',
   cargo: 'Desenvolvedor(a) Front-end Pleno',
   area: 'Tecnologia',
   nivel: 'pleno',
@@ -109,6 +112,19 @@ export function JobForm({ onSubmit, isLoading, initialData }: Props) {
       </div>
 
       <Section n="01" title="A vaga">
+        <div>
+          <label htmlFor="empresa" className={labelCls}>Empresa</label>
+          <input
+            id="empresa"
+            type="text"
+            maxLength={MAX_CHARS.empresa}
+            placeholder="Ex: TechNova (opcional, aparece na descrição gerada)"
+            value={form.empresa ?? ''}
+            onChange={(e) => set('empresa', e.target.value)}
+            className={inputCls}
+          />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="cargo" className={labelCls}>Cargo *</label>
