@@ -1,55 +1,13 @@
 import { Router, Request, Response } from 'express';
 import Groq, { RateLimitError } from 'groq-sdk';
 import { buildPrompt, SYSTEM_PROMPT } from '../lib/buildPrompt';
-import { GerarVagaBody, NivelVaga, Modalidade, TomDescricao } from '../types';
+import { gerarVagaSchema, primeiroErro } from '../lib/schema';
+import { JobFormData } from '../types';
 
 const router = Router();
 
 function getClient(): Groq {
   return new Groq({ apiKey: process.env.GROQ_API_KEY });
-}
-
-const NIVEIS: NivelVaga[] = ['estagio', 'junior', 'pleno', 'senior'];
-const MODALIDADES: Modalidade[] = ['remoto', 'hibrido', 'presencial'];
-const TONS: TomDescricao[] = ['formal', 'moderno', 'descontraido'];
-
-const MAX_CHARS = {
-  empresa: 120,
-  cargo: 120,
-  area: 120,
-  responsabilidades: 3000,
-  requisitos: 3000,
-  diferenciais: 2000,
-  beneficios: 2000,
-} as const;
-
-const CAMPOS_OBRIGATORIOS = ['cargo', 'area', 'responsabilidades', 'requisitos'] as const;
-const CAMPOS_OPCIONAIS = ['empresa', 'diferenciais', 'beneficios'] as const;
-
-function validateBody(body: unknown): body is GerarVagaBody {
-  if (!body || typeof body !== 'object') return false;
-  const b = body as Record<string, unknown>;
-
-  for (const field of CAMPOS_OBRIGATORIOS) {
-    const v = b[field];
-    if (typeof v !== 'string' || v.trim().length === 0 || v.length > MAX_CHARS[field]) {
-      return false;
-    }
-  }
-
-  for (const field of CAMPOS_OPCIONAIS) {
-    const v = b[field];
-    if (v === undefined || v === '') continue;
-    if (typeof v !== 'string' || v.length > MAX_CHARS[field]) return false;
-  }
-
-  if (b.anterior !== undefined && typeof b.anterior !== 'string') return false;
-
-  if (!NIVEIS.includes(b.nivel as NivelVaga)) return false;
-  if (!MODALIDADES.includes(b.modalidade as Modalidade)) return false;
-  if (!TONS.includes(b.tom as TomDescricao)) return false;
-
-  return true;
 }
 
 function sseWrite(res: Response, evento: object) {
@@ -63,17 +21,25 @@ router.post('/gerar-vaga', async (req: Request, res: Response) => {
     return;
   }
 
-  if (!validateBody(req.body)) {
-    res.status(400).json({ erro: 'Campos obrigatórios ausentes ou inválidos.' });
+  const validacao = gerarVagaSchema.safeParse(req.body);
+  if (!validacao.success) {
+    res.status(400).json({ erro: primeiroErro(validacao.error) });
     return;
   }
 
-  const { anterior, ...formData } = req.body as GerarVagaBody;
+  const { anterior, ...resto } = validacao.data;
+  // Anotação proposital: quebra a compilação se o schema deixar de produzir
+  // exatamente o payload que o construtor de prompt espera.
+  const formData: JobFormData = resto;
 
   try {
     const client = getClient();
     const stream = await client.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      // llama-3.3-70b-versatile foi descontinuado pela Groq e passou a responder 404.
+      model: 'openai/gpt-oss-120b',
+      // Modelo de raciocínio: no esforço baixo ele não gasta o orçamento de
+      // tokens pensando, e a descrição sai completa dentro do limite.
+      reasoning_effort: 'low',
       max_tokens: 2048,
       // Regeneração pede mais variação; primeira geração fica mais estável.
       temperature: anterior ? 1.1 : 0.8,

@@ -42,7 +42,12 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+import areasRouter from './routes/areas';
 import gerarVagaRouter from './routes/gerarVaga';
+
+// Registry consumido pela UI; precisa vir antes para não cair no rate limit
+// aplicado apenas a /api/gerar-vaga.
+app.use('/api', areasRouter);
 app.use('/api', gerarVagaRouter);
 
 // Na Vercel o app roda como serverless function (ver api/index.ts);

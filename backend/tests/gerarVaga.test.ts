@@ -47,15 +47,15 @@ function parseEventos(text: string): Array<Record<string, unknown>> {
 }
 
 const validBody = {
+  area: 'tecnologia',
   cargo: 'Desenvolvedor Backend',
-  area: 'Tecnologia',
-  nivel: 'senior',
+  senioridade: 'senior',
   modalidade: 'remoto',
+  tom: 'moderno',
   responsabilidades: 'Desenvolver APIs REST em Node.js',
   requisitos: 'Node.js, TypeScript, 5 anos',
   diferenciais: 'Docker, Kubernetes',
-  beneficios: 'Vale refeição, home office',
-  tom: 'moderno',
+  beneficios: ['vale-refeicao', 'plano-saude'],
 };
 
 beforeEach(() => {
@@ -106,6 +106,35 @@ describe('POST /api/gerar-vaga', () => {
     expect(regeneracao).toBeGreaterThan(primeira);
   });
 
+  it('monta o prompt com a orientação da área escolhida', async () => {
+    await request(app)
+      .post('/api/gerar-vaga')
+      .send({
+        area: 'logistica-operacoes',
+        cargo: 'Auxiliar de Almoxarifado',
+        senioridade: 'auxiliar',
+        modalidade: 'presencial',
+        cidade: 'Guarulhos',
+        uf: 'SP',
+        tom: 'moderno',
+      });
+
+    const prompt = mockCreate.mock.calls[0][0].messages[1].content;
+    expect(prompt).toContain('acuracidade de estoque');
+    expect(prompt).not.toContain('code review');
+  });
+
+  it('gera vaga só com área, cargo, senioridade, modalidade e tom', async () => {
+    const res = await request(app).post('/api/gerar-vaga').send({
+      area: 'tecnologia',
+      cargo: 'Analista de Dados',
+      senioridade: 'junior',
+      modalidade: 'remoto',
+      tom: 'formal',
+    });
+    expect(res.status).toBe(200);
+  });
+
   it('returns 400 when cargo is missing', async () => {
     const { cargo: _, ...body } = validBody;
     const res = await request(app).post('/api/gerar-vaga').send(body);
@@ -133,10 +162,25 @@ describe('POST /api/gerar-vaga', () => {
     expect(res.status).toBe(400);
   });
 
-  it('returns 400 when nivel is invalid', async () => {
+  it('returns 400 when area is not in the registry', async () => {
     const res = await request(app)
       .post('/api/gerar-vaga')
-      .send({ ...validBody, nivel: 'gerente' });
+      .send({ ...validBody, area: 'astrologia' });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when senioridade does not belong to the area', async () => {
+    const res = await request(app)
+      .post('/api/gerar-vaga')
+      .send({ ...validBody, senioridade: 'encarregado' });
+    expect(res.status).toBe(400);
+    expect(res.body.erro).toMatch(/Tecnologia da Informação/);
+  });
+
+  it('returns 400 when a non-remote vaga has no city', async () => {
+    const res = await request(app)
+      .post('/api/gerar-vaga')
+      .send({ ...validBody, modalidade: 'presencial' });
     expect(res.status).toBe(400);
   });
 
@@ -168,10 +212,17 @@ describe('POST /api/gerar-vaga', () => {
     expect(res.status).toBe(400);
   });
 
-  it('accepts empty diferenciais and beneficios', async () => {
+  it('returns 400 when an extra field does not belong to the area', async () => {
     const res = await request(app)
       .post('/api/gerar-vaga')
-      .send({ ...validBody, diferenciais: '', beneficios: '' });
+      .send({ ...validBody, extras: { cnh: 'd' } });
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts empty diferenciais and no beneficios', async () => {
+    const res = await request(app)
+      .post('/api/gerar-vaga')
+      .send({ ...validBody, diferenciais: '', beneficios: [] });
     expect(res.status).toBe(200);
   });
 
