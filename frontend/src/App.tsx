@@ -101,9 +101,8 @@ export default function App() {
           Vagas bem escritas contratam <span className="text-accent italic">melhor</span>.
         </h1>
         <p className="mt-5 text-ink-soft text-lg max-w-xl leading-relaxed">
-          Da vaga de pessoa desenvolvedora à de auxiliar de almoxarifado: escolha a área,
-          informe cargo e nível, e a IA escreve uma descrição completa, no vocabulário certo,
-          pronta para publicar no LinkedIn, Gupy ou Indeed.
+          De qualquer área, para qualquer cargo: informe os detalhes da vaga e a IA cria uma
+          descrição profissional, completa e pronta para publicar no LinkedIn, Gupy ou etc.
         </p>
       </section>
 
