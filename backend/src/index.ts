@@ -27,7 +27,20 @@ app.use(cors({
   methods: ['GET', 'POST'],
 }));
 
-app.use(express.json({ limit: '10kb' }));
+// Soma dos limites de campo do schema chega a ~12 KB num formulário totalmente
+// preenchido; 10kb devolvia 413 antes do zod poder responder com mensagem útil.
+app.use(express.json({ limit: '32kb' }));
+
+// Registry é JSON estático e fica em cache na borda; o limite cobre quem bater
+// direto na função, furando o cache.
+app.use(
+  '/api/areas',
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    message: { erro: 'Muitas requisições. Tente novamente em 15 minutos.' },
+  }),
+);
 
 app.use(
   '/api/gerar-vaga',

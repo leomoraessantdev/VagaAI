@@ -67,8 +67,12 @@ export default function App() {
   }, []);
 
   const handleRegenerate = useCallback(() => {
-    if (lastForm) handleSubmit(lastForm, descricao || undefined);
-  }, [lastForm, descricao, handleSubmit]);
+    if (!lastForm) return;
+    // O prompt só aproveita o começo da versão anterior. Mandar a descrição
+    // inteira estourava o limite de corpo do backend e devolvia 413.
+    const limite = registry?.limites.anterior ?? 2000;
+    handleSubmit(lastForm, descricao ? descricao.slice(0, limite) : undefined);
+  }, [lastForm, descricao, handleSubmit, registry]);
 
   const handleRetry = useCallback(() => {
     if (lastForm) handleSubmit(lastForm);

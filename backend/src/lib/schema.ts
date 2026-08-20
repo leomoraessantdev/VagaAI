@@ -24,7 +24,9 @@ export const LIMITES = {
   requisitos: 3000,
   diferenciais: 2000,
   beneficiosExtras: 500,
-  anterior: 20000,
+  // buildPrompt só aproveita os primeiros 1500 caracteres; aceitar 20000 era
+  // desperdício e estourava o limite de corpo do express antes do zod rodar.
+  anterior: 2000,
 } as const;
 
 /** Teto de sanidade da faixa salarial (R$ 1 milhão por mês). */

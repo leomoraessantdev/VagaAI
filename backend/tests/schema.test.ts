@@ -194,6 +194,34 @@ describe('plataforma de destino', () => {
   });
 });
 
+describe('limite de descrição anterior', () => {
+  it('aceita até o limite declarado', () => {
+    const r = gerarVagaSchema.safeParse({ ...minimo, anterior: 'x'.repeat(LIMITES.anterior) });
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita acima do limite', () => {
+    expect(erros({ ...minimo, anterior: 'x'.repeat(LIMITES.anterior + 1) })).toContain('anterior');
+  });
+
+  // Regressão: com anterior em 20000 o payload passava de 10 KB e o express
+  // devolvia 413 antes do zod, quebrando o botão Regenerar.
+  it('mantém o payload máximo abaixo do limite de corpo do express', () => {
+    const somaDosCampos =
+      LIMITES.cargo +
+      LIMITES.areaLivre +
+      LIMITES.empresa +
+      LIMITES.sobreEmpresa +
+      LIMITES.cidade +
+      LIMITES.responsabilidades +
+      LIMITES.requisitos +
+      LIMITES.diferenciais +
+      LIMITES.beneficiosExtras +
+      LIMITES.anterior;
+    expect(somaDosCampos).toBeLessThan(32 * 1024);
+  });
+});
+
 describe('normalização de texto', () => {
   it('transforma string vazia em ausente', () => {
     const r = gerarVagaSchema.safeParse({ ...minimo, diferenciais: '', empresa: '' });
