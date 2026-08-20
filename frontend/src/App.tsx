@@ -102,7 +102,7 @@ export default function App() {
         </h1>
         <p className="mt-5 text-ink-soft text-lg max-w-xl leading-relaxed">
           De qualquer área, para qualquer cargo: informe os detalhes da vaga e a IA cria uma
-          descrição profissional, completa e pronta para publicar no LinkedIn, Gupy ou etc.
+          descrição profissional, completa e pronta para publicar no LinkedIn, na Gupy e afins.
         </p>
       </section>
 
