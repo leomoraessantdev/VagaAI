@@ -85,9 +85,13 @@ todos derivados do registry.
 
 ## Screenshots
 
-![Interface do VagaAI](docs/vagaai.png)
+**Passo 1 — a área da vaga.** Dez áreas mais "Outra área" com campo livre. Cada card leva a uma escala de senioridade própria, sugestões de cargo e campos específicos daquela área.
 
-![Descrição gerada pelo VagaAI](docs/vagaai-resultado.png)
+![Seleção de área no VagaAI](docs/vagaai.png)
+
+**Passo 2 — detalhes e resultado.** Auxiliar de Almoxarifado em Guarulhos, com CNH, NR-11 e vaga afirmativa para PCD. A descrição sai falando de expedição, EPIs e acuracidade de estoque — não de stack e code review.
+
+![Descrição gerada pelo VagaAI para uma vaga de logística](docs/vagaai-resultado.png)
 
 ## Tecnologias
 
