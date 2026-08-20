@@ -28,6 +28,12 @@
     />
     <meta name="twitter:image" content="https://vagaai-demo.vercel.app/vagaai.png" />
 
+    <!--
+      ATENCAO: o conteudo deste script inline esta no hash SHA-256 da CSP em
+      frontend/vercel.json (script-src). Editar qualquer caractere aqui invalida
+      o hash e o navegador passa a bloquear o script, trazendo de volta o flash
+      de tema. Ao mexer, recalcule o hash sobre o texto exato entre as tags.
+    -->
     <script>
       // Aplica o tema antes do primeiro paint para evitar flash de tema errado.
       (function () {
