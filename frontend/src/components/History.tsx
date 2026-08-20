@@ -1,4 +1,5 @@
 import { HistoryEntry } from '../types';
+import { descriptionToPlainText } from '../lib/markdown';
 
 interface Props {
   entries: HistoryEntry[];
@@ -44,7 +45,7 @@ export function History({ entries, onSelect, onClear }: Props) {
               </span>
             </div>
             <p className="text-xs text-ink-faint truncate">
-              {entry.descricao.slice(0, 80)}...
+              {descriptionToPlainText(entry.descricao).replace(/\s+/g, ' ').slice(0, 80)}...
             </p>
           </button>
         ))}

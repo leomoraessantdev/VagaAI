@@ -1,4 +1,4 @@
-import { JobFormData } from '../types';
+import { JobFormData, Registry } from '../types';
 
 const BASE = import.meta.env.VITE_API_URL ?? '';
 // Generosos de propósito: streaming mantém a conexão aberta durante toda a geração.
@@ -125,4 +125,24 @@ export async function gerarDescricao(
     }
     throw err;
   }
+}
+
+/**
+ * Baixa o registry de áreas do backend. É o que permite adicionar uma área
+ * nova sem tocar em componente de UI: a tela se monta a partir desta resposta.
+ */
+export async function carregarRegistry(signal?: AbortSignal): Promise<Registry> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/areas`, { signal });
+  } catch {
+    throw new Error('Não foi possível carregar as áreas. Verifique sua conexão.');
+  }
+  if (!res.ok) throw new Error('Não foi possível carregar as áreas. Tente novamente.');
+
+  const dados = (await res.json()) as Partial<Registry>;
+  if (!Array.isArray(dados.areas) || dados.areas.length === 0 || !dados.catalogos || !dados.limites) {
+    throw new Error('Resposta inesperada do servidor ao carregar as áreas.');
+  }
+  return dados as Registry;
 }

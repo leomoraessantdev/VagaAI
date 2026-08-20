@@ -24,6 +24,27 @@ export function ResultArea({
 }: Props) {
   const [copied, setCopied] = useState<CopyState>('idle');
 
+  function handleDownload() {
+    const plain = descriptionToPlainText(descricao);
+    const primeiraLinha = plain.split('\n')[0]?.trim() ?? 'vaga';
+    const nome = primeiraLinha
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60);
+
+    const url = URL.createObjectURL(new Blob([plain], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${nome || 'vaga'}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleCopy() {
     const plain = descriptionToPlainText(descricao);
     const html = descriptionToHtml(descricao);
@@ -96,7 +117,7 @@ export function ResultArea({
           </svg>
         </div>
         <p className="text-ink-faint text-sm max-w-xs leading-relaxed">
-          Preencha o formulário ao lado e clique em{' '}
+          Preencha o formulário e clique em{' '}
           <span className="font-medium text-ink-soft">"Gerar Descrição"</span> para criar sua vaga
           com IA.
         </p>
@@ -146,6 +167,17 @@ export function ResultArea({
               Regenerar
             </button>
           )}
+          <button
+            onClick={handleDownload}
+            disabled={isLoading}
+            title="Baixar como .txt"
+            className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line-strong text-ink-soft hover:border-ink hover:text-ink transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            <span className="sr-only sm:not-sr-only">Baixar</span>
+          </button>
           <button
             onClick={handleCopy}
             disabled={isLoading}

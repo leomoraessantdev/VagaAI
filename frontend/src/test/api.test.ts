@@ -1,17 +1,16 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { JobFormData } from '../types';
+import { registryFake } from './fixtures';
 
 const mockFetch = vi.fn();
 
 const formData: JobFormData = {
+  area: 'tecnologia',
   cargo: 'Dev',
-  area: 'Tech',
-  nivel: 'pleno',
+  senioridade: 'pleno',
   modalidade: 'remoto',
   responsabilidades: 'Codar',
   requisitos: 'React',
-  diferenciais: '',
-  beneficios: '',
   tom: 'moderno',
 };
 
@@ -111,5 +110,49 @@ describe('gerarDescricao', () => {
     await gerarDescricao({ ...formData, anterior: 'Versão antiga' });
     const [, init] = mockFetch.mock.calls[0];
     expect(JSON.parse(init.body).anterior).toBe('Versão antiga');
+  });
+});
+
+describe('carregarRegistry', () => {
+  function jsonResponse(corpo: unknown, status = 200): Response {
+    return new Response(JSON.stringify(corpo), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  it('devolve o registry servido pelo backend', async () => {
+    const { carregarRegistry } = await import('../lib/api');
+    mockFetch.mockResolvedValue(jsonResponse(registryFake));
+
+    const registry = await carregarRegistry();
+    expect(registry.areas).toHaveLength(registryFake.areas.length);
+    expect(registry.catalogos.beneficios.length).toBeGreaterThan(0);
+    expect(registry.limites.cargo).toBe(120);
+    expect(mockFetch).toHaveBeenCalledWith('/api/areas', expect.anything());
+  });
+
+  it('avisa quando a rede falha', async () => {
+    const { carregarRegistry } = await import('../lib/api');
+    mockFetch.mockRejectedValue(new TypeError('offline'));
+    await expect(carregarRegistry()).rejects.toThrow(/conexão/i);
+  });
+
+  it('avisa quando o servidor responde erro', async () => {
+    const { carregarRegistry } = await import('../lib/api');
+    mockFetch.mockResolvedValue(jsonResponse({ erro: 'boom' }, 500));
+    await expect(carregarRegistry()).rejects.toThrow(/não foi possível carregar/i);
+  });
+
+  it('rejeita resposta sem áreas em vez de renderizar formulário vazio', async () => {
+    const { carregarRegistry } = await import('../lib/api');
+    mockFetch.mockResolvedValue(jsonResponse({ areas: [], catalogos: {}, limites: {} }));
+    await expect(carregarRegistry()).rejects.toThrow(/inesperada/i);
+  });
+
+  it('rejeita resposta sem catálogos', async () => {
+    const { carregarRegistry } = await import('../lib/api');
+    mockFetch.mockResolvedValue(jsonResponse({ areas: registryFake.areas }));
+    await expect(carregarRegistry()).rejects.toThrow(/inesperada/i);
   });
 });

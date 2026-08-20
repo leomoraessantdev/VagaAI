@@ -16,6 +16,7 @@
   --color-accent-deep: #0a523a;
   --color-accent-tint: #e7f0e9;
   --color-amber: #d9822b;
+  --color-amber-tint: #fdf1e2;
   --color-danger: #b3402e;
   --color-danger-tint: #f9e9e5;
 
@@ -68,6 +69,7 @@ html.dark {
   --color-accent-deep: #2c8a62;
   --color-accent-tint: #1f2b24;
   --color-amber: #e2a45c;
+  --color-amber-tint: #2f2418;
   --color-danger: #e0705a;
   --color-danger-tint: #342019;
 

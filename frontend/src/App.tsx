@@ -4,6 +4,7 @@ import { JobForm } from './components/JobForm';
 import { ResultArea } from './components/ResultArea';
 import { History } from './components/History';
 import { useHistory } from './hooks/useHistory';
+import { useRegistry } from './hooks/useRegistry';
 import { gerarDescricao, GeracaoCancelada } from './lib/api';
 import { HistoryEntry, JobFormData } from './types';
 
@@ -23,6 +24,7 @@ export default function App() {
   const abortRef = useRef<AbortController | null>(null);
   const seedCount = useRef(0);
   const { entries, addEntry, clearHistory } = useHistory();
+  const { registry, carregando: carregandoAreas, erro: erroAreas, recarregar } = useRegistry();
 
   const handleSubmit = useCallback(
     async (data: JobFormData, anterior?: string) => {
@@ -95,8 +97,9 @@ export default function App() {
           Vagas bem escritas contratam <span className="text-accent italic">melhor</span>.
         </h1>
         <p className="mt-5 text-ink-soft text-lg max-w-xl leading-relaxed">
-          Preencha os dados da posição e a IA escreve uma descrição completa, pronta para
-          publicar no LinkedIn, Gupy ou Indeed.
+          Da vaga de pessoa desenvolvedora à de auxiliar de almoxarifado: escolha a área,
+          informe cargo e nível, e a IA escreve uma descrição completa, no vocabulário certo,
+          pronta para publicar no LinkedIn, Gupy ou Indeed.
         </p>
       </section>
 
@@ -122,12 +125,40 @@ export default function App() {
             className="lg:col-span-5 bg-sheet rounded-2xl border border-line shadow-sheet p-6 sm:p-7 animate-fade-up"
             style={{ animationDelay: '0.1s' }}
           >
-            <JobForm
-              key={formSeed?.key ?? 0}
-              initialData={formSeed?.data}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-            />
+            {carregandoAreas && (
+              <div role="status" aria-label="Carregando áreas" className="space-y-3 py-6">
+                {['w-1/3', 'w-full', 'w-full', 'w-2/3'].map((w, i) => (
+                  <div
+                    key={i}
+                    className={`h-9 rounded-lg ${w} animate-shimmer bg-[linear-gradient(90deg,var(--color-line)_25%,var(--color-paper)_50%,var(--color-line)_75%)] bg-[length:200%_100%]`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {!carregandoAreas && !registry && (
+              <div role="alert" className="py-6 text-center space-y-3">
+                <p className="text-sm text-ink-soft">
+                  {erroAreas || 'Não foi possível carregar as áreas.'}
+                </p>
+                <button
+                  onClick={recarregar}
+                  className="px-4 py-2 rounded-lg border border-line-strong text-sm text-ink-soft hover:border-ink hover:text-ink transition-colors"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            )}
+
+            {registry && (
+              <JobForm
+                key={formSeed?.key ?? 0}
+                registry={registry}
+                initialData={formSeed?.data}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+              />
+            )}
             <History entries={entries} onSelect={handleSelectHistory} onClear={clearHistory} />
           </div>
           <div

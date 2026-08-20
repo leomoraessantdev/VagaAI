@@ -6,14 +6,12 @@ const mockStore: Record<string, string> = {};
 
 function makeForm(cargo: string): JobFormData {
   return {
+    area: 'tecnologia',
     cargo,
-    area: 'Tecnologia',
-    nivel: 'pleno',
+    senioridade: 'pleno',
     modalidade: 'remoto',
     responsabilidades: 'Codar',
     requisitos: 'React',
-    diferenciais: '',
-    beneficios: '',
     tom: 'moderno',
   };
 }
@@ -84,5 +82,108 @@ describe('useHistory', () => {
     act(() => result.current.addEntry(makeForm('Dev'), 'Desc'));
     act(() => result.current.clearHistory());
     expect(result.current.entries).toHaveLength(0);
+  });
+});
+
+describe('migração de entradas antigas', () => {
+  const legado = [
+    {
+      id: '1',
+      cargo: 'Desenvolvedor Frontend',
+      descricao: 'Descrição antiga da vaga.',
+      timestamp: 1,
+      form: {
+        empresa: 'TechNova',
+        cargo: 'Desenvolvedor Frontend',
+        area: 'Tecnologia',
+        nivel: 'pleno',
+        modalidade: 'remoto',
+        responsabilidades: 'Codar',
+        requisitos: 'React',
+        diferenciais: '',
+        beneficios: 'VR, VA e plano de saúde',
+        tom: 'moderno',
+      },
+    },
+  ];
+
+  it('converte nivel em senioridade e mantém o id do nível', () => {
+    mockStore['vagaai_history'] = JSON.stringify(legado);
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries[0].form).toMatchObject({
+      area: 'tecnologia',
+      senioridade: 'pleno',
+      cargo: 'Desenvolvedor Frontend',
+    });
+  });
+
+  it('move os benefícios em texto livre para beneficiosExtras', () => {
+    mockStore['vagaai_history'] = JSON.stringify(legado);
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries[0].form?.beneficiosExtras).toBe('VR, VA e plano de saúde');
+  });
+
+  it('descarta string vazia em vez de mandar campo vazio ao backend', () => {
+    mockStore['vagaai_history'] = JSON.stringify(legado);
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries[0].form?.diferenciais).toBeUndefined();
+  });
+
+  it('força remoto quando a entrada antiga não tem cidade nem UF', () => {
+    const presencial = [
+      { ...legado[0], form: { ...legado[0].form, modalidade: 'presencial' } },
+    ];
+    mockStore['vagaai_history'] = JSON.stringify(presencial);
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries[0].form?.modalidade).toBe('remoto');
+  });
+
+  it('preserva entrada já no formato novo', () => {
+    const novo = [
+      {
+        id: '2',
+        cargo: 'Auxiliar de Almoxarifado',
+        descricao: 'Vaga nova.',
+        timestamp: 2,
+        form: {
+          area: 'logistica-operacoes',
+          cargo: 'Auxiliar de Almoxarifado',
+          senioridade: 'auxiliar',
+          modalidade: 'presencial',
+          cidade: 'Guarulhos',
+          uf: 'SP',
+          tom: 'moderno',
+        },
+      },
+    ];
+    mockStore['vagaai_history'] = JSON.stringify(novo);
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries[0].form).toMatchObject({
+      area: 'logistica-operacoes',
+      senioridade: 'auxiliar',
+      cidade: 'Guarulhos',
+    });
+  });
+
+  it('mantém a descrição legível quando o form não é convertível', () => {
+    const quebrado = [
+      { id: '3', cargo: 'X', descricao: 'Texto sobrevive.', timestamp: 3, form: { lixo: true } },
+    ];
+    mockStore['vagaai_history'] = JSON.stringify(quebrado);
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries[0].descricao).toBe('Texto sobrevive.');
+    expect(result.current.entries[0].form).toBeUndefined();
+  });
+
+  it('ignora localStorage corrompido sem quebrar a tela', () => {
+    mockStore['vagaai_history'] = '{nao é json';
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries).toEqual([]);
+  });
+
+  it('descarta entrada sem descrição', () => {
+    mockStore['vagaai_history'] = JSON.stringify([{ id: '4', cargo: 'X', timestamp: 4 }]);
+    const { result } = renderHook(() => useHistory());
+    expect(result.current.entries).toEqual([]);
   });
 });

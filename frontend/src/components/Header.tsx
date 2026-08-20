@@ -38,7 +38,7 @@ export function Header() {
         <div className="flex items-center gap-3">
           <span className="hidden sm:inline-flex items-center gap-2 font-mono text-[11px] text-ink-faint border border-line rounded-full px-3 py-1">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            Llama 3.3 via Groq
+            IA via Groq
           </span>
           <button
             onClick={toggleTheme}
