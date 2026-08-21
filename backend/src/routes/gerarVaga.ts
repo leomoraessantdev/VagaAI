@@ -1,10 +1,15 @@
 import { Router, Request, Response } from 'express';
-import Groq, { RateLimitError } from 'groq-sdk';
+import Groq, { NotFoundError, RateLimitError } from 'groq-sdk';
 import { buildPrompt, SYSTEM_PROMPT } from '../lib/buildPrompt';
 import { gerarVagaSchema, primeiroErro } from '../lib/schema';
 import { JobFormData } from '../types';
 
 const router = Router();
+
+// A Groq aposenta modelo sem aviso: llama-3.3-70b-versatile passou a responder
+// 404 e derrubou a geração em produção. Deixar o id em variável de ambiente faz
+// da próxima troca uma mudança de configuração, não um deploy de código.
+const MODELO = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 function getClient(): Groq {
   return new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -35,8 +40,7 @@ router.post('/gerar-vaga', async (req: Request, res: Response) => {
   try {
     const client = getClient();
     const stream = await client.chat.completions.create({
-      // llama-3.3-70b-versatile foi descontinuado pela Groq e passou a responder 404.
-      model: 'openai/gpt-oss-120b',
+      model: MODELO,
       // Modelo de raciocínio: no esforço baixo ele não gasta o orçamento de
       // tokens pensando, e a descrição sai completa dentro do limite.
       reasoning_effort: 'low',
@@ -79,14 +83,25 @@ router.post('/gerar-vaga', async (req: Request, res: Response) => {
     // Groq free tier tem limite diário/por minuto compartilhado pela conta —
     // ao bater o teto, avisa o usuário em vez de devolver erro genérico.
     const limiteEstourado = error instanceof RateLimitError;
+    // Modelo aposentado devolve 404: sem mensagem própria, o operador só vê
+    // "falha ao gerar" e não descobre que basta trocar GROQ_MODEL.
+    const modeloSumiu = error instanceof NotFoundError;
+    if (modeloSumiu) {
+      console.error(
+        `Modelo "${MODELO}" indisponível na Groq. Ajuste a variável GROQ_MODEL.`,
+      );
+    }
+
     const mensagem = limiteEstourado
       ? 'Estamos com alta demanda no momento. Tente novamente em alguns minutos.'
-      : 'Falha ao gerar descrição. Tente novamente.';
+      : modeloSumiu
+        ? 'O modelo de IA configurado está indisponível. Avise o administrador.'
+        : 'Falha ao gerar descrição. Tente novamente.';
     if (res.headersSent) {
       sseWrite(res, { erro: mensagem });
       res.end();
     } else {
-      res.status(limiteEstourado ? 503 : 500).json({ erro: mensagem });
+      res.status(limiteEstourado ? 503 : modeloSumiu ? 503 : 500).json({ erro: mensagem });
     }
   }
 });

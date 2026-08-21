@@ -12,13 +12,14 @@ jest.mock('groq-sdk', () => {
     __esModule: true,
     default: MockGroq,
     RateLimitError: actual.RateLimitError,
+    NotFoundError: actual.NotFoundError,
   };
 });
 
 process.env.GROQ_API_KEY = 'test-key';
 
 import gerarVagaRouter from '../src/routes/gerarVaga';
-import { RateLimitError } from 'groq-sdk';
+import { NotFoundError, RateLimitError } from 'groq-sdk';
 
 const app = express();
 app.use(express.json());
@@ -224,6 +225,38 @@ describe('POST /api/gerar-vaga', () => {
       .post('/api/gerar-vaga')
       .send({ ...validBody, diferenciais: '', beneficios: [] });
     expect(res.status).toBe(200);
+  });
+
+  it('usa openai/gpt-oss-120b por padrão', async () => {
+    await request(app).post('/api/gerar-vaga').send(validBody);
+    expect(mockCreate.mock.calls[0][0].model).toBe('openai/gpt-oss-120b');
+  });
+
+  // A Groq aposentou llama-3.3-70b-versatile e derrubou a produção. Com o id
+  // em variável de ambiente, a próxima troca não exige deploy de código.
+  it('respeita GROQ_MODEL quando definido', async () => {
+    process.env.GROQ_MODEL = 'modelo/de-teste';
+    let routerIsolado: unknown;
+    jest.isolateModules(() => {
+      routerIsolado = require('../src/routes/gerarVaga').default;
+    });
+    const appIsolado = express();
+    appIsolado.use(express.json());
+    appIsolado.use('/api', routerIsolado as express.Router);
+
+    await request(appIsolado).post('/api/gerar-vaga').send(validBody);
+    expect(mockCreate.mock.calls[0][0].model).toBe('modelo/de-teste');
+    delete process.env.GROQ_MODEL;
+  });
+
+  it('responde 503 com mensagem própria quando o modelo não existe mais', async () => {
+    mockCreate.mockRejectedValue(
+      new NotFoundError(404, { message: 'model_not_found' }, 'model_not_found', new Headers()),
+    );
+    const res = await request(app).post('/api/gerar-vaga').send(validBody);
+    expect(res.status).toBe(503);
+    expect(res.body.erro).toMatch(/modelo de IA configurado está indisponível/i);
+    expect(res.body.erro).not.toMatch(/Falha ao gerar/i);
   });
 
   it('returns 500 JSON when Groq create rejects', async () => {
