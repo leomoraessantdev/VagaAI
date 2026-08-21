@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useReducer, useRef } from 'react';
 import { Header } from './components/Header';
 import { JobForm } from './components/JobForm';
 import { ResultArea } from './components/ResultArea';
@@ -7,25 +7,17 @@ import { useHistory } from './hooks/useHistory';
 import { useRegistry } from './hooks/useRegistry';
 import { gerarDescricao, GeracaoCancelada } from './lib/api';
 import { HistoryEntry, JobFormData } from './types';
-
-// key força remontagem do JobForm para repopular os campos visíveis.
-interface FormSeed {
-  key: number;
-  data: JobFormData;
-}
+import {
+  ESTADO_INICIAL,
+  reducerGeracao,
+  vagaInalterada,
+  vagaParaRegenerar,
+} from './state/geracao';
 
 export default function App() {
-  const [descricao, setDescricao] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [aviso, setAviso] = useState('');
-  const [lastForm, setLastForm] = useState<JobFormData | null>(null);
-  // O que está no formulário agora, que pode já ter sido editado depois da
-  // última geração. Regenerar sem isso reenviava a vaga anterior.
-  const [formAtual, setFormAtual] = useState<JobFormData | null>(null);
-  const [formSeed, setFormSeed] = useState<FormSeed | null>(null);
+  const [estado, dispatch] = useReducer(reducerGeracao, ESTADO_INICIAL);
+  const { descricao, gerando, erro, aviso, vagaGerada, semente } = estado;
   const abortRef = useRef<AbortController | null>(null);
-  const seedCount = useRef(0);
   const { entries, addEntry, clearHistory } = useHistory();
   const { registry, carregando: carregandoAreas, erro: erroAreas, recarregar } = useRegistry();
 
@@ -35,31 +27,24 @@ export default function App() {
       const controller = new AbortController();
       abortRef.current = controller;
 
-      setIsLoading(true);
-      setError('');
-      setAviso('');
-      setLastForm(data);
-      setDescricao('');
+      dispatch({ tipo: 'geracaoIniciada', vaga: data });
       try {
         const { texto, truncada } = await gerarDescricao(
           { ...data, anterior },
-          setDescricao,
+          (parcial) => dispatch({ tipo: 'textoRecebido', texto: parcial }),
           controller.signal,
         );
-        setDescricao(texto);
-        if (truncada) {
-          setAviso('A descrição atingiu o limite de tamanho e pode ter sido cortada no final.');
-        }
+        dispatch({ tipo: 'geracaoConcluida', texto, truncada });
         addEntry(data, texto);
       } catch (err) {
         if (err instanceof GeracaoCancelada) {
-          // Mantém o texto parcial já transmitido; interromper não é erro.
-          setAviso('Geração interrompida.');
+          dispatch({ tipo: 'geracaoCancelada' });
         } else {
-          setError(err instanceof Error ? err.message : 'Erro desconhecido.');
+          dispatch({
+            tipo: 'geracaoFalhou',
+            erro: err instanceof Error ? err.message : 'Erro desconhecido.',
+          });
         }
-      } finally {
-        setIsLoading(false);
       }
     },
     [addEntry],
@@ -70,33 +55,32 @@ export default function App() {
   }, []);
 
   const handleRegenerate = useCallback(() => {
-    const alvo = formAtual ?? lastForm;
+    const alvo = vagaParaRegenerar(estado);
     if (!alvo) return;
 
-    // Só faz sentido pedir "uma versão diferente" quando a vaga é a mesma que
-    // gerou o texto na tela. Se o recrutador editou o formulário, Regenerar
-    // gera a vaga nova do zero em vez de variar a antiga.
-    const mesmaVaga = lastForm !== null && JSON.stringify(alvo) === JSON.stringify(lastForm);
     // O prompt só aproveita o começo da versão anterior. Mandar a descrição
     // inteira estourava o limite de corpo do backend e devolvia 413.
     const limite = registry?.limites.anterior ?? 2000;
+    const anterior =
+      vagaInalterada(estado) && descricao ? descricao.slice(0, limite) : undefined;
 
-    handleSubmit(alvo, mesmaVaga && descricao ? descricao.slice(0, limite) : undefined);
-  }, [formAtual, lastForm, descricao, handleSubmit, registry]);
+    handleSubmit(alvo, anterior);
+  }, [estado, descricao, handleSubmit, registry]);
 
   const handleRetry = useCallback(() => {
-    if (lastForm) handleSubmit(lastForm);
-  }, [lastForm, handleSubmit]);
+    if (vagaGerada) handleSubmit(vagaGerada);
+  }, [vagaGerada, handleSubmit]);
+
+  const handleFormChange = useCallback((vaga: JobFormData) => {
+    dispatch({ tipo: 'formularioEditado', vaga });
+  }, []);
 
   const handleSelectHistory = useCallback((entry: HistoryEntry) => {
-    setDescricao(entry.descricao);
-    setLastForm(entry.form ?? null);
-    if (entry.form) {
-      seedCount.current += 1;
-      setFormSeed({ key: seedCount.current, data: entry.form });
-    }
-    setError('');
-    setAviso('');
+    dispatch({
+      tipo: 'historicoSelecionado',
+      descricao: entry.descricao,
+      vaga: entry.form ?? null,
+    });
   }, []);
 
   return (
@@ -117,13 +101,13 @@ export default function App() {
       </section>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-5 pb-16">
-        {error && (
+        {erro && (
           <div
             role="alert"
             className="mb-6 px-4 py-3 bg-danger-tint border border-danger/30 rounded-xl text-danger text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2"
           >
-            <span>{error}</span>
-            {lastForm && (
+            <span>{erro}</span>
+            {vagaGerada && (
               <button
                 onClick={handleRetry}
                 className="self-start sm:self-auto shrink-0 px-3 py-1 rounded-lg border border-danger/40 font-medium hover:bg-danger hover:text-sheet transition-colors"
@@ -165,12 +149,12 @@ export default function App() {
 
             {registry && (
               <JobForm
-                key={formSeed?.key ?? 0}
+                key={semente?.key ?? 0}
                 registry={registry}
-                initialData={formSeed?.data}
+                initialData={semente?.data}
                 onSubmit={handleSubmit}
-                onFormChange={setFormAtual}
-                isLoading={isLoading}
+                onFormChange={handleFormChange}
+                isLoading={gerando}
               />
             )}
             <History entries={entries} onSelect={handleSelectHistory} onClear={clearHistory} />
@@ -181,10 +165,10 @@ export default function App() {
           >
             <ResultArea
               descricao={descricao}
-              isLoading={isLoading}
+              isLoading={gerando}
               onRegenerate={handleRegenerate}
               onCancel={handleCancel}
-              canRegenerate={lastForm !== null}
+              canRegenerate={vagaGerada !== null}
               aviso={aviso || undefined}
             />
           </div>

@@ -111,7 +111,11 @@ export function JobForm({ registry, onSubmit, isLoading, initialData, onFormChan
     setForm((anterior) => ({ ...anterior, [campo]: valor }));
   }
 
-  /** Trocar de área invalida nível e campos extras: eles pertencem à área antiga. */
+  /**
+   * Trocar de área invalida nível e campos extras, que pertencem à área antiga.
+   * Local e modalidade também voltam ao padrão: manter "Guarulhos / presencial"
+   * numa vaga de desenvolvimento remoto era o tipo de sobra que passa batido.
+   */
   function trocarArea(id: string) {
     setErroPasso1('');
     setForm((anterior) => ({
@@ -120,6 +124,9 @@ export function JobForm({ registry, onSubmit, isLoading, initialData, onFormChan
       senioridade: '',
       extras: undefined,
       areaLivre: id === AREA_LIVRE_ID ? anterior.areaLivre : undefined,
+      modalidade: 'remoto',
+      cidade: undefined,
+      uf: undefined,
     }));
   }
 

@@ -245,6 +245,86 @@ describe('aviso de conformidade', () => {
   });
 });
 
+describe('navegação por teclado nos radiogroups', () => {
+  beforeEach(() => noop.mockClear());
+
+  function radiosDaArea() {
+    return within(screen.getByRole('radiogroup', { name: /área da vaga/i })).getAllByRole('radio');
+  }
+
+  // Padrão ARIA: o grupo inteiro é uma parada de Tab, não uma por opção.
+  it('o grupo de áreas é uma única parada de Tab', () => {
+    montar();
+    const focaveis = radiosDaArea().filter((r) => r.tabIndex === 0);
+    expect(focaveis).toHaveLength(1);
+    expect(radiosDaArea().length).toBeGreaterThan(1);
+  });
+
+  it('a parada de Tab acompanha a opção selecionada', async () => {
+    const user = userEvent.setup();
+    montar();
+    await user.click(radiosDaArea()[1]);
+    const atual = radiosDaArea();
+    expect(atual[1].tabIndex).toBe(0);
+    expect(atual[0].tabIndex).toBe(-1);
+  });
+
+  it('as setas movem foco e seleção juntos', async () => {
+    const user = userEvent.setup();
+    montar();
+    radiosDaArea()[0].focus();
+    await user.keyboard('{ArrowRight}');
+
+    expect(radiosDaArea()[1]).toHaveAttribute('aria-checked', 'true');
+    expect(radiosDaArea()[1]).toHaveFocus();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(radiosDaArea()[0]).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('a navegação circula nas pontas', async () => {
+    const user = userEvent.setup();
+    montar();
+    radiosDaArea()[0].focus();
+    await user.keyboard('{ArrowLeft}');
+
+    const ultimo = radiosDaArea().length - 1;
+    expect(radiosDaArea()[ultimo]).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('Home e End vão para as pontas', async () => {
+    const user = userEvent.setup();
+    montar();
+    radiosDaArea()[0].focus();
+    await user.keyboard('{End}');
+    const ultimo = radiosDaArea().length - 1;
+    expect(radiosDaArea()[ultimo]).toHaveAttribute('aria-checked', 'true');
+
+    await user.keyboard('{Home}');
+    expect(radiosDaArea()[0]).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('o grupo de senioridade também navega por setas', async () => {
+    const user = userEvent.setup();
+    montar();
+    const niveis = () =>
+      within(screen.getByRole('radiogroup', { name: /nível da vaga/i })).getAllByRole('radio');
+
+    niveis()[0].focus();
+    await user.keyboard('{ArrowDown}');
+    expect(niveis()[1]).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('sem nível escolhido, o Tab entra no primeiro do grupo', () => {
+    montar();
+    const niveis = within(
+      screen.getByRole('radiogroup', { name: /nível da vaga/i }),
+    ).getAllByRole('radio');
+    expect(niveis[0].tabIndex).toBe(0);
+    expect(niveis.every((n) => n.getAttribute('aria-checked') === 'false')).toBe(true);
+  });
+});
+
 describe('Enter no passo 1', () => {
   beforeEach(() => noop.mockClear());
 
@@ -310,6 +390,44 @@ describe('onFormChange', () => {
     const ultimo = chamadas[chamadas.length - 1][0] as JobFormData;
     expect(ultimo.area).toBe('logistica-operacoes');
     expect(ultimo.senioridade).toBe('');
+  });
+});
+
+describe('troca de área não deixa sobra', () => {
+  it('limpa nível, campos extras, local e modalidade', async () => {
+    const user = userEvent.setup();
+    const onFormChange = vi.fn();
+    render(
+      <JobForm
+        registry={registryFake}
+        onSubmit={noop}
+        isLoading={false}
+        onFormChange={onFormChange}
+      />,
+    );
+
+    // Monta uma vaga presencial de logística com campo extra preenchido.
+    await user.click(screen.getByRole('radio', { name: /Logística/ }));
+    await user.type(screen.getByRole('combobox', { name: /cargo/i }), 'Auxiliar de Almoxarifado');
+    await user.click(screen.getByRole('radio', { name: /^Auxiliar/ }));
+    await user.click(screen.getByRole('button', { name: /continuar/i }));
+    await user.click(screen.getByRole('radio', { name: 'Presencial' }));
+    await user.type(screen.getByLabelText(/cidade/i), 'Guarulhos');
+    await user.selectOptions(screen.getByLabelText(/^UF/i), 'SP');
+    await user.selectOptions(screen.getByLabelText(/CNH exigida/i), 'd');
+
+    // Volta ao passo 1 e troca de área.
+    await user.click(screen.getByRole('button', { name: /Auxiliar de Almoxarifado/ }));
+    await user.click(screen.getByRole('radio', { name: /Tecnologia/ }));
+
+    const chamadas = onFormChange.mock.calls;
+    const atual = chamadas[chamadas.length - 1][0] as JobFormData;
+    expect(atual.area).toBe('tecnologia');
+    expect(atual.senioridade).toBe('');
+    expect(atual.extras).toBeUndefined();
+    expect(atual.cidade).toBeUndefined();
+    expect(atual.uf).toBeUndefined();
+    expect(atual.modalidade).toBe('remoto');
   });
 });
 
