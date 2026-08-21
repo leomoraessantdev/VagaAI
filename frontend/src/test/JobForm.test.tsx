@@ -245,6 +245,74 @@ describe('aviso de conformidade', () => {
   });
 });
 
+describe('Enter no passo 1', () => {
+  beforeEach(() => noop.mockClear());
+
+  // Regressão: o campo cargo fica dentro do <form>, então Enter disparava
+  // submit implícito, pulava a validação e mandava senioridade vazia ao backend.
+  it('avança em vez de enviar a vaga', async () => {
+    const user = userEvent.setup();
+    montar();
+    await user.type(screen.getByRole('combobox', { name: /cargo/i }), 'Analista de Dados');
+    await user.click(screen.getByRole('radio', { name: /Pleno/ }));
+    await user.type(screen.getByRole('combobox', { name: /cargo/i }), '{Enter}');
+
+    expect(noop).not.toHaveBeenCalled();
+    expect(screen.getByText(/passo 2 de 2/i)).toBeInTheDocument();
+  });
+
+  it('mostra o erro em vez de enviar payload sem nível', async () => {
+    const user = userEvent.setup();
+    montar();
+    await user.type(screen.getByRole('combobox', { name: /cargo/i }), 'Analista{Enter}');
+
+    expect(noop).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(/escolha o nível/i);
+  });
+});
+
+describe('onFormChange', () => {
+  it('reporta o payload atual a cada edição', async () => {
+    const user = userEvent.setup();
+    const onFormChange = vi.fn();
+    render(
+      <JobForm
+        registry={registryFake}
+        onSubmit={noop}
+        isLoading={false}
+        onFormChange={onFormChange}
+      />,
+    );
+    await user.type(screen.getByRole('combobox', { name: /cargo/i }), 'Analista de Dados');
+    await user.click(screen.getByRole('radio', { name: /Pleno/ }));
+
+    const chamadas = onFormChange.mock.calls;
+    const ultimo = chamadas[chamadas.length - 1][0] as JobFormData;
+    expect(ultimo.cargo).toBe('Analista de Dados');
+    expect(ultimo.senioridade).toBe('pleno');
+  });
+
+  it('reporta a troca de área já com a senioridade limpa', async () => {
+    const user = userEvent.setup();
+    const onFormChange = vi.fn();
+    render(
+      <JobForm
+        registry={registryFake}
+        onSubmit={noop}
+        isLoading={false}
+        onFormChange={onFormChange}
+      />,
+    );
+    await user.click(screen.getByRole('radio', { name: /Pleno/ }));
+    await user.click(screen.getByRole('radio', { name: /Logística/ }));
+
+    const chamadas = onFormChange.mock.calls;
+    const ultimo = chamadas[chamadas.length - 1][0] as JobFormData;
+    expect(ultimo.area).toBe('logistica-operacoes');
+    expect(ultimo.senioridade).toBe('');
+  });
+});
+
 describe('estados do formulário', () => {
   beforeEach(() => noop.mockClear());
 

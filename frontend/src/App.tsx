@@ -20,6 +20,9 @@ export default function App() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [lastForm, setLastForm] = useState<JobFormData | null>(null);
+  // O que está no formulário agora, que pode já ter sido editado depois da
+  // última geração. Regenerar sem isso reenviava a vaga anterior.
+  const [formAtual, setFormAtual] = useState<JobFormData | null>(null);
   const [formSeed, setFormSeed] = useState<FormSeed | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const seedCount = useRef(0);
@@ -67,12 +70,19 @@ export default function App() {
   }, []);
 
   const handleRegenerate = useCallback(() => {
-    if (!lastForm) return;
+    const alvo = formAtual ?? lastForm;
+    if (!alvo) return;
+
+    // Só faz sentido pedir "uma versão diferente" quando a vaga é a mesma que
+    // gerou o texto na tela. Se o recrutador editou o formulário, Regenerar
+    // gera a vaga nova do zero em vez de variar a antiga.
+    const mesmaVaga = lastForm !== null && JSON.stringify(alvo) === JSON.stringify(lastForm);
     // O prompt só aproveita o começo da versão anterior. Mandar a descrição
     // inteira estourava o limite de corpo do backend e devolvia 413.
     const limite = registry?.limites.anterior ?? 2000;
-    handleSubmit(lastForm, descricao ? descricao.slice(0, limite) : undefined);
-  }, [lastForm, descricao, handleSubmit, registry]);
+
+    handleSubmit(alvo, mesmaVaga && descricao ? descricao.slice(0, limite) : undefined);
+  }, [formAtual, lastForm, descricao, handleSubmit, registry]);
 
   const handleRetry = useCallback(() => {
     if (lastForm) handleSubmit(lastForm);
@@ -159,6 +169,7 @@ export default function App() {
                 registry={registry}
                 initialData={formSeed?.data}
                 onSubmit={handleSubmit}
+                onFormChange={setFormAtual}
                 isLoading={isLoading}
               />
             )}

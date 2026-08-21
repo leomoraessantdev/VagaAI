@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AreaPublica, ExtraFieldValue, JobFormData, Registry } from '../types';
 import { PassoIdentificacao } from './PassoIdentificacao';
 import { PassoDetalhes } from './PassoDetalhes';
@@ -10,6 +10,8 @@ interface Props {
   onSubmit: (data: JobFormData) => void;
   isLoading: boolean;
   initialData?: JobFormData;
+  /** Reporta o payload atual a cada edição, para o Regenerar não usar dado velho. */
+  onFormChange?: (data: JobFormData) => void;
 }
 
 const AREA_LIVRE_ID = 'outra';
@@ -79,7 +81,7 @@ function paraEnvio(form: JobFormData): JobFormData {
   return limpo;
 }
 
-export function JobForm({ registry, onSubmit, isLoading, initialData }: Props) {
+export function JobForm({ registry, onSubmit, isLoading, initialData, onFormChange }: Props) {
   const [form, setForm] = useState<JobFormData>(initialData ?? formVazio(registry));
   const [passo, setPasso] = useState<1 | 2>(initialData ? 2 : 1);
   const [erroPasso1, setErroPasso1] = useState('');
@@ -100,6 +102,10 @@ export function JobForm({ registry, onSubmit, isLoading, initialData }: Props) {
       ]),
     [form.responsabilidades, form.requisitos, form.diferenciais, form.sobreEmpresa, form.beneficiosExtras, area.skillLabel],
   );
+
+  useEffect(() => {
+    onFormChange?.(paraEnvio(form));
+  }, [form, onFormChange]);
 
   function set<K extends keyof JobFormData>(campo: K, valor: JobFormData[K]) {
     setForm((anterior) => ({ ...anterior, [campo]: valor }));
@@ -133,6 +139,13 @@ export function JobForm({ registry, onSubmit, isLoading, initialData }: Props) {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    // Enter num campo do passo 1 dispara submit implícito do form. Ali o botão
+    // é "Continuar", então Enter tem que avançar — e não enviar uma vaga sem
+    // nível escolhido, que o backend recusa com 400.
+    if (passo === 1) {
+      avancar();
+      return;
+    }
     onSubmit(paraEnvio(form));
   }
 

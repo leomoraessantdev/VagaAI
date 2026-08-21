@@ -164,6 +164,76 @@ test('aviso de conformidade aparece sem bloquear a geração', async ({ page }) 
   await expect(page.getByText(/\d+ palavras/)).toBeVisible();
 });
 
+// Regressão: Regenerar reenviava o último payload gerado, ignorando o que o
+// recrutador tinha acabado de editar. Quem trocava a vaga de logística por uma
+// de tecnologia e clicava Regenerar recebia a vaga de logística de volta.
+test('regenerar usa o formulário atual, não a vaga anterior', async ({ page }) => {
+  await mockRegistry(page);
+  const enviados: Array<Record<string, unknown>> = [];
+  await page.route('**/api/gerar-vaga', (route) => {
+    enviados.push(JSON.parse(route.request().postData() ?? '{}'));
+    return route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'text/event-stream; charset=utf-8' },
+      body: SSE_BODY,
+    });
+  });
+
+  await page.goto('/');
+
+  // Vaga 1: logística
+  await page.getByRole('radio', { name: /Logística/ }).click();
+  await page.getByRole('combobox', { name: /Cargo/ }).fill('Auxiliar de Almoxarifado');
+  await page.getByRole('radio', { name: 'Auxiliar', exact: true }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByText('Passo 2 de 2').waitFor();
+  await page.getByRole('button', { name: 'Gerar Descrição' }).click();
+  await expect(page.getByText(/\d+ palavras/)).toBeVisible();
+
+  // Troca tudo para tecnologia
+  await page.getByRole('button', { name: /Logística e Operações/ }).first().click();
+  await page.getByText('Passo 1 de 2').waitFor();
+  await page.getByRole('radio', { name: /Tecnologia/ }).click();
+  await page.getByRole('combobox', { name: /Cargo/ }).fill('Desenvolvedor Júnior');
+  await page.getByRole('radio', { name: /^Pleno/ }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByText('Passo 2 de 2').waitFor();
+
+  await page.getByRole('button', { name: 'Regenerar' }).click();
+  await expect(page.getByText(/\d+ palavras/)).toBeVisible();
+
+  const ultimo = enviados[enviados.length - 1];
+  expect(ultimo.area).toBe('tecnologia');
+  expect(ultimo.cargo).toBe('Desenvolvedor Júnior');
+  expect(ultimo.senioridade).toBe('pleno');
+  // Vaga diferente: não faz sentido pedir variação do texto da anterior.
+  expect(ultimo.anterior).toBeUndefined();
+});
+
+test('regenerar pede variação quando a vaga não mudou', async ({ page }) => {
+  await mockRegistry(page);
+  const enviados: Array<Record<string, unknown>> = [];
+  await page.route('**/api/gerar-vaga', (route) => {
+    enviados.push(JSON.parse(route.request().postData() ?? '{}'));
+    return route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'text/event-stream; charset=utf-8' },
+      body: SSE_BODY,
+    });
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Preencher com exemplo' }).click();
+  await page.getByRole('button', { name: 'Gerar Descrição' }).click();
+  await expect(page.getByText(/\d+ palavras/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Regenerar' }).click();
+  await expect(page.getByText(/\d+ palavras/)).toBeVisible();
+
+  const ultimo = enviados[enviados.length - 1];
+  expect(typeof ultimo.anterior).toBe('string');
+});
+
 test('erro do backend mostra banner com retry', async ({ page }) => {
   await mockRegistry(page);
   let chamadas = 0;
