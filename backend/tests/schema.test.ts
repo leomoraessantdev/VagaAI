@@ -13,6 +13,64 @@ function erros(body: unknown): string[] {
   return r.success ? [] : r.error.issues.map((i) => i.path.join('.'));
 }
 
+/**
+ * Contrato com o frontend.
+ *
+ * O front monta o payload em frontend/src/components/JobForm.tsx (formVazio e
+ * paraEnvio) e descreve o tipo em frontend/src/types/index.ts, escrito à mão
+ * porque os dois lados são deploys separados. Estes testes são o que impede os
+ * dois de divergirem: acrescentar campo obrigatório aqui quebra este arquivo
+ * antes de quebrar em produção com 400.
+ */
+describe('contrato com o formulário do frontend', () => {
+  // Espelho de formVazio(): o estado inicial do formulário depois de escolher
+  // área e nível. Se isto parar de validar, o front quebra em runtime.
+  const doFormularioVazio = {
+    area: 'tecnologia',
+    cargo: 'Analista de Dados',
+    senioridade: 'pleno',
+    modalidade: 'remoto',
+    tom: 'moderno',
+    plataforma: 'generico',
+    linguagemNeutra: true,
+  };
+
+  it('aceita o payload que o formulário monta sem nenhum campo opcional', () => {
+    const r = gerarVagaSchema.safeParse(doFormularioVazio);
+    expect(r.success).toBe(true);
+  });
+
+  it('aceita o payload completo, com todos os campos que a UI oferece', () => {
+    const completo = {
+      ...doFormularioVazio,
+      area: 'logistica-operacoes',
+      senioridade: 'auxiliar',
+      cargo: 'Auxiliar de Almoxarifado',
+      empresa: 'Distribuidora Norte',
+      sobreEmpresa: 'Centro de distribuição com 200 pessoas.',
+      modalidade: 'presencial',
+      cidade: 'Guarulhos',
+      uf: 'SP',
+      contrato: 'clt',
+      jornada: 'escala-6x1',
+      salario: { min: 1900, max: 2400, periodo: 'mes', divulgar: true },
+      beneficios: ['vale-transporte', 'vale-refeicao'],
+      beneficiosExtras: 'Cesta básica mensal',
+      afirmativa: ['pcd'],
+      responsabilidades: 'Receber, conferir e armazenar materiais.',
+      requisitos: 'Ensino fundamental completo.',
+      diferenciais: 'Curso de empilhadeira.',
+      extras: { cnh: 'nao-exige', nrs: ['nr-11'], adicional: 'insalubridade' },
+      tom: 'formal',
+      plataforma: 'linkedin',
+      anterior: 'Versão anterior da descrição.',
+    };
+    const r = gerarVagaSchema.safeParse(completo);
+    if (!r.success) console.error(r.error.issues);
+    expect(r.success).toBe(true);
+  });
+});
+
 describe('payload mínimo', () => {
   it('aceita área, cargo, senioridade, modalidade e tom', () => {
     const r = gerarVagaSchema.safeParse(minimo);

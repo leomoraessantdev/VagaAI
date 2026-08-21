@@ -37,9 +37,6 @@ export const AREA_IDS = Object.keys(AREAS) as [AreaId, ...AreaId[]];
 /** Id da área usada quando o recrutador informa a área em texto livre. */
 export const AREA_LIVRE_ID: AreaId = 'outra';
 
-export function isAreaId(valor: unknown): valor is AreaId {
-  return typeof valor === 'string' && valor in AREAS;
-}
 
 export function getArea(id: AreaId): AreaConfig {
   return AREAS[id];

@@ -35,7 +35,14 @@ export interface FaixaSalarial {
 }
 
 /**
- * Payload da vaga. Só `area`, `cargo` e `senioridade` são obrigatórios —
+ * Payload da vaga.
+ *
+ * O frontend mantém uma cópia manual deste tipo em frontend/src/types/index.ts
+ * (deploys separados, sem build compartilhado). Ao mexer aqui, confira o bloco
+ * "contrato com o formulário do frontend" em tests/schema.test.ts — é ele que
+ * pega a divergência antes da produção.
+ *
+ * Só `area`, `cargo` e `senioridade` são obrigatórios —
  * o resto o modelo deduz a partir do cargo e do nível, para que um recrutador
  * consiga publicar uma vaga usável preenchendo três campos.
  */

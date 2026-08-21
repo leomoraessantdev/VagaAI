@@ -1,6 +1,15 @@
 /**
  * Espelho do que `GET /api/areas` devolve. O backend é a fonte de verdade:
  * adicionar uma área lá aparece aqui sem tocar em componente nenhum.
+ *
+ * `JobFormData` é escrito à mão porque front e back são deploys separados e
+ * não compartilham build. Os campos abertos (`area`, `modalidade`, `tom`) são
+ * `string` de propósito: os valores válidos chegam do registry em tempo de
+ * execução, não em tempo de compilação.
+ *
+ * O que impede os dois lados de divergirem em silêncio é o bloco "contrato com
+ * o formulário do frontend" em backend/tests/schema.test.ts. Campo obrigatório
+ * novo no zod quebra aquele teste antes de quebrar aqui com 400.
  */
 
 export interface Opcao {

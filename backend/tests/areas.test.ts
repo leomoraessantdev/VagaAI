@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import areasRouter from '../src/routes/areas';
-import { AREAS, AREA_IDS, getArea, isAreaId, listAreasPublicas } from '../src/data/areas';
+import { AREAS, AREA_IDS, getArea, listAreasPublicas } from '../src/data/areas';
 
 const app = express();
 app.use('/api', areasRouter);
@@ -56,11 +56,6 @@ describe('invariantes do registry', () => {
     expect(AREA_IDS[AREA_IDS.length - 1]).toBe('outra');
   });
 
-  it('reconhece apenas ids do registry', () => {
-    expect(isAreaId('tecnologia')).toBe(true);
-    expect(isAreaId('astrologia')).toBe(false);
-    expect(isAreaId(42)).toBe(false);
-  });
 
   it('expõe todas as áreas declaradas', () => {
     expect(AREA_IDS).toHaveLength(Object.keys(AREAS).length);
