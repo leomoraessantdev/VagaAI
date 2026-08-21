@@ -1,6 +1,7 @@
 import { AreaPublica, Catalogos, ExtraFieldValue, FaixaSalarial, JobFormData, Limites } from '../types';
 import { Campo, Chips, Section, inputCls, labelCls, selectCls } from './campos';
 import { ExtraFields } from './ExtraFields';
+import { useRadioGroup } from '../hooks/useRadioGroup';
 
 interface Props {
   catalogos: Catalogos;
@@ -27,6 +28,11 @@ function alternar(lista: string[] | undefined, id: string): string[] {
 /** Passo 2: tudo opcional. O recrutador preenche só o que tiver em mãos. */
 export function PassoDetalhes({ catalogos, limites, form, area, onChange, onChangeExtra }: Props) {
   const salario = form.salario ?? SALARIO_PADRAO;
+  const propsDaModalidade = useRadioGroup(
+    catalogos.modalidades.map((m) => m.id),
+    form.modalidade,
+    (id) => onChange('modalidade', id),
+  );
 
   function setSalario(patch: Partial<FaixaSalarial>) {
     onChange('salario', { ...SALARIO_PADRAO, ...form.salario, ...patch });
@@ -38,15 +44,13 @@ export function PassoDetalhes({ catalogos, limites, form, area, onChange, onChan
         <fieldset>
           <legend className={labelCls}>Modalidade</legend>
           <div role="radiogroup" aria-label="Modalidade" className="grid grid-cols-3 gap-2">
-            {catalogos.modalidades.map((opcao) => {
+            {catalogos.modalidades.map((opcao, i) => {
               const ativo = form.modalidade === opcao.id;
               return (
                 <button
                   key={opcao.id}
                   type="button"
-                  role="radio"
-                  aria-checked={ativo}
-                  onClick={() => onChange('modalidade', opcao.id)}
+                  {...propsDaModalidade(i)}
                   className={
                     'rounded-lg border py-2 text-sm transition-colors ' +
                     (ativo

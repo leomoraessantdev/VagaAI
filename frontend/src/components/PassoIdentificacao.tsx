@@ -2,6 +2,7 @@ import { AreaPublica, JobFormData, Limites } from '../types';
 import { AreaPicker } from './AreaPicker';
 import { CargoCombobox } from './CargoCombobox';
 import { Campo, inputCls } from './campos';
+import { useRadioGroup } from '../hooks/useRadioGroup';
 
 interface Props {
   areas: AreaPublica[];
@@ -28,6 +29,12 @@ export function PassoIdentificacao({
   onChange,
   erro,
 }: Props) {
+  const propsDoNivel = useRadioGroup(
+    area.seniorityLevels.map((n) => n.id),
+    form.senioridade,
+    (id) => onChange('senioridade', id),
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -72,15 +79,13 @@ export function PassoIdentificacao({
           Escala usada no mercado brasileiro para {area.label.toLowerCase()}.
         </p>
         <div role="radiogroup" aria-label="Nível da vaga" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {area.seniorityLevels.map((nivel) => {
+          {area.seniorityLevels.map((nivel, i) => {
             const ativo = nivel.id === form.senioridade;
             return (
               <button
                 key={nivel.id}
                 type="button"
-                role="radio"
-                aria-checked={ativo}
-                onClick={() => onChange('senioridade', nivel.id)}
+                {...propsDoNivel(i)}
                 className={
                   'h-full w-full text-left rounded-lg border px-3.5 py-2.5 transition-colors ' +
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ' +

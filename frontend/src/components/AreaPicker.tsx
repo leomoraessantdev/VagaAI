@@ -1,4 +1,5 @@
 import { AreaPublica } from '../types';
+import { useRadioGroup } from '../hooks/useRadioGroup';
 
 interface Props {
   areas: AreaPublica[];
@@ -11,6 +12,8 @@ interface Props {
  * suspensa esconde as áreas e o recrutador não vê o que existe.
  */
 export function AreaPicker({ areas, selecionada, onSelect }: Props) {
+  const propsDoItem = useRadioGroup(areas.map((a) => a.id), selecionada, onSelect);
+
   return (
     <fieldset>
       <legend className="sr-only">Área da vaga</legend>
@@ -19,15 +22,13 @@ export function AreaPicker({ areas, selecionada, onSelect }: Props) {
         aria-label="Área da vaga"
         className="grid grid-cols-2 sm:grid-cols-3 gap-2.5"
       >
-        {areas.map((area) => {
+        {areas.map((area, i) => {
           const ativo = area.id === selecionada;
           return (
             <button
               key={area.id}
               type="button"
-              role="radio"
-              aria-checked={ativo}
-              onClick={() => onSelect(area.id)}
+              {...propsDoItem(i)}
               title={area.descricao}
               className={
                 'text-left rounded-xl border p-3 transition-colors focus:outline-none ' +
